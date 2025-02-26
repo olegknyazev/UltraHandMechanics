@@ -34,6 +34,14 @@ void UUHManipulator::StopManipulation()
 	BlockBeingManipulated = nullptr;
 }
 
+void UUHManipulator::MoveRelative(const FVector& Offset)
+{
+	if (BlockBeingManipulated)
+	{
+		BlockRelativeLocation += Offset;
+	}
+}
+
 void UUHManipulator::BeginPlay()
 {
 	Super::BeginPlay();

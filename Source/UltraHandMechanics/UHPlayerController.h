@@ -44,6 +44,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* UltraHandStopAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* UltraHandLookAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* UltraHandMoveAction;
+	
 	AUHPlayerController();
 	
 	virtual void Tick(float DeltaSeconds) override;
@@ -58,4 +64,6 @@ private:
 	void UltraHandStop();
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void UltraHandMove(const FInputActionValue& Value);
+	void UltraHandLook(const FInputActionValue& Value);
 };

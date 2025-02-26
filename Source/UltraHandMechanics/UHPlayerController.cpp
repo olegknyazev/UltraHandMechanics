@@ -30,6 +30,8 @@ void AUHPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AUHPlayerController::Look);
 		EnhancedInputComponent->BindAction(UltraHandStartAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandStart);
 		EnhancedInputComponent->BindAction(UltraHandStopAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandStop);
+		EnhancedInputComponent->BindAction(UltraHandMoveAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandMove);
+		EnhancedInputComponent->BindAction(UltraHandLookAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandLook);
 	}
 	
 	if (auto* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
@@ -120,4 +122,24 @@ void AUHPlayerController::Look(const FInputActionValue& Value)
 
 	GetPawn()->AddControllerYawInput(LookAxisVector.X);
 	GetPawn()->AddControllerPitchInput(LookAxisVector.Y);
+}
+
+void AUHPlayerController::UltraHandMove(const FInputActionValue& Value)
+{
+	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	{
+		Manipulator->MoveRelative(Value.Get<FVector>());
+	}
+}
+
+void AUHPlayerController::UltraHandLook(const FInputActionValue& Value)
+{
+	if (!GetPawn())
+	{
+		return;
+	}
+	
+	const auto LookYawValue = Value.Get<float>();
+	
+	GetPawn()->AddControllerYawInput(LookYawValue);
 }

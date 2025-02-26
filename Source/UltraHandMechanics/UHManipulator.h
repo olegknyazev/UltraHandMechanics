@@ -17,6 +17,7 @@ public:
 
 	void StartManipulation(UUHBlock* Block);
 	void StopManipulation();
+	void MoveRelative(const FVector& Offset);
 
 protected:
 	virtual void BeginPlay() override;
