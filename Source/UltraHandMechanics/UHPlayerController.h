@@ -25,6 +25,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputMappingContext* DefaultMappingContext;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputMappingContext* UltraHandMappingContext;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* JumpAction;
@@ -38,6 +41,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* UltraHandStartAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* UltraHandStopAction;
+
 	AUHPlayerController();
 	
 	virtual void Tick(float DeltaSeconds) override;
@@ -49,6 +55,7 @@ private:
 	void Jump();
 	void StopJumping();
 	void UltraHandStart();
+	void UltraHandStop();
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 };
