@@ -28,6 +28,11 @@ void UUHBlock::SetHighlighted(bool bInHighlighted)
 	}
 }
 
+UPrimitiveComponent* UUHBlock::GetPrimitiveComponent() const
+{
+	return GetOwner()->FindComponentByClass<UPrimitiveComponent>();
+}
+
 void UUHBlock::BeginPlay()
 {
 	Super::BeginPlay();

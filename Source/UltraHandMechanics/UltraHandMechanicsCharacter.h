@@ -7,6 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "UltraHandMechanicsCharacter.generated.h"
 
+class UUHManipulator;
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
@@ -27,6 +28,9 @@ class AUltraHandMechanicsCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
+
+	UPROPERTY(VisibleAnywhere)
+	UUHManipulator* Manipulator;
 	
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -44,6 +48,10 @@ class AUltraHandMechanicsCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* UltraHandStartAction;
+
+	
 public:
 	AUltraHandMechanicsCharacter();
 	
@@ -55,6 +63,8 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	void UltraHandStart();
 			
 
 protected:

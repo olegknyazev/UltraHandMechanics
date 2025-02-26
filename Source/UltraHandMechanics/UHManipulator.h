@@ -5,6 +5,8 @@
 #include "UHManipulator.generated.h"
 
 
+class UUHBlock;
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ULTRAHANDMECHANICS_API UUHManipulator : public USceneComponent
 {
@@ -13,9 +15,21 @@ class ULTRAHANDMECHANICS_API UUHManipulator : public USceneComponent
 public:	
 	UUHManipulator();
 
+	void StartManipulation(UUHBlock* Block);
+	void StopManipulation();
+
 protected:
 	virtual void BeginPlay() override;
 
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+private:
+	FTransform GetOriginTransform() const;
+	
+	UPROPERTY()
+	UUHBlock* BlockBeingManipulated;
+
+	FVector BlockRelativeLocation;
+	FQuat BlockRelativeRotation;
 };

@@ -22,6 +22,8 @@ public:
 	bool IsHighlighted() const;
 	void SetHighlighted(bool bInHighlighted);
 
+	UPrimitiveComponent* GetPrimitiveComponent() const;
+
 protected:
 	virtual void BeginPlay() override;
 

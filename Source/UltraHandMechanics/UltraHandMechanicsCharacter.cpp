@@ -10,6 +10,9 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "UHManipulator.h"
+#include "UHPicker.h"
+#include "UHPlayerController.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -50,6 +53,9 @@ AUltraHandMechanicsCharacter::AUltraHandMechanicsCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	Manipulator = CreateDefaultSubobject<UUHManipulator>(TEXT("Manipulator"));
+	Manipulator->SetupAttachment(GetRootComponent());
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
@@ -85,6 +91,8 @@ void AUltraHandMechanicsCharacter::SetupPlayerInputComponent(UInputComponent* Pl
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AUltraHandMechanicsCharacter::Look);
+
+		EnhancedInputComponent->BindAction(UltraHandStartAction, ETriggerEvent::Triggered, this, &AUltraHandMechanicsCharacter::UltraHandStart);
 	}
 	else
 	{
@@ -125,5 +133,16 @@ void AUltraHandMechanicsCharacter::Look(const FInputActionValue& Value)
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+void AUltraHandMechanicsCharacter::UltraHandStart()
+{
+	if (auto* const Controller = Cast<AUHPlayerController>(GetController()))
+	{
+		if (auto* const Picker = Controller->Picker)
+		{
+			Manipulator->StartManipulation(Picker->SelectedBlock);
+		}
 	}
 }
