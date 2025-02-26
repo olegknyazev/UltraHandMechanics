@@ -17,22 +17,45 @@ void UUHPicker::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (auto* const PlayerController = Cast<APlayerController>(GetOwner()))
-	{
-		int32 ViewportWidth, ViewportHeight;
-		PlayerController->GetViewportSize(ViewportWidth, ViewportHeight);
+	SetSelectedBlock(TraceBlockUnderAim());
+}
 
-		UUHBlock* BlockUnderAim = nullptr;
-		FHitResult Hit;
-		if (PlayerController->GetHitResultAtScreenPosition(FVector2D(ViewportWidth / 2, ViewportHeight / 2), ECC_Visibility, false, Hit))
+void UUHPicker::SetSelectedBlock(UUHBlock* Block)
+{
+	if (SelectedBlock != Block)
+	{
+		if (SelectedBlock)
 		{
-			BlockUnderAim = Hit.GetActor()->FindComponentByClass<UUHBlock>();
+			SelectedBlock->SetHighlighted(false);
 		}
-	
-		if (SelectedBlock != BlockUnderAim)
+
+		SelectedBlock = Block;
+
+		if (SelectedBlock)
 		{
-			SelectedBlock = BlockUnderAim;
-			UE_LOG(LogTemp, Warning, TEXT("SelectedBlock is now %s"), SelectedBlock ? *SelectedBlock->GetName() : TEXT("None"));
+			SelectedBlock->SetHighlighted(true);
 		}
+			
+		UE_LOG(LogTemp, Display, TEXT("SelectedBlock is now %s"), SelectedBlock ? *SelectedBlock->GetName() : TEXT("None"));
 	}
+}
+
+UUHBlock* UUHPicker::TraceBlockUnderAim() const
+{
+	auto* const PlayerController = Cast<APlayerController>(GetOwner());
+	if (!PlayerController)
+	{
+		return nullptr;
+	}
+
+	int32 ViewportWidth, ViewportHeight;
+	PlayerController->GetViewportSize(ViewportWidth, ViewportHeight);
+
+	FHitResult Hit;
+	if (!PlayerController->GetHitResultAtScreenPosition(FVector2D(ViewportWidth / 2, ViewportHeight / 2), ECC_Visibility, false, Hit))
+	{
+		return nullptr;
+	}
+	
+	return Hit.GetActor()->FindComponentByClass<UUHBlock>();
 }

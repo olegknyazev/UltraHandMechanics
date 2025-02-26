@@ -26,4 +26,8 @@ public:
 		float DeltaTime,
 		ELevelTick TickType,
 		FActorComponentTickFunction* ThisTickFunction) override;
+
+private:
+	void SetSelectedBlock(UUHBlock* Block);
+	UUHBlock* TraceBlockUnderAim() const;
 };
