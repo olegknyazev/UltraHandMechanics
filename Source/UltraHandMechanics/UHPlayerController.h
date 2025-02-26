@@ -6,6 +6,9 @@
 #include "GameFramework/PlayerController.h"
 #include "UHPlayerController.generated.h"
 
+struct FInputActionValue;
+class UInputAction;
+class UInputMappingContext;
 class UUHPicker;
 
 /**
@@ -20,7 +23,32 @@ public:
 	UPROPERTY()
 	UUHPicker* Picker;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputMappingContext* DefaultMappingContext;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* JumpAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* MoveAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* LookAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* UltraHandStartAction;
+
 	AUHPlayerController();
 	
 	virtual void Tick(float DeltaSeconds) override;
+
+protected:
+	virtual void SetupInputComponent() override;
+
+private:
+	void Jump();
+	void StopJumping();
+	void UltraHandStart();
+	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
 };
