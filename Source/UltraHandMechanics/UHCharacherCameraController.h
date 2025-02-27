@@ -18,6 +18,9 @@ struct ULTRAHANDMECHANICS_API FUH3rdPersonCameraSettings
 
 	UPROPERTY(EditAnywhere)
 	float Distance;
+
+	UPROPERTY(EditAnywhere)
+	float BlendSpeed;
 };
 
 
@@ -37,16 +40,17 @@ public:
 	FUH3rdPersonCameraSettings RegularSettings;
 
 	UPROPERTY(EditAnywhere)
-	FUH3rdPersonCameraSettings UltraHandSettings;
+	FUH3rdPersonCameraSettings UltraHandPickingSettings;
 
 	UPROPERTY(EditAnywhere)
-	float BlendSpeed = 1.f;
+	FUH3rdPersonCameraSettings UltraHandManipulatingSettings;
 
 	UUHCharacherCameraController();
 
 	void ActivateRegularMode();
-	void ActivateUltraHandMode();
-	
+	void ActivateUltraHandPickingMode();
+	void ActivateUltraHandManipulatingMode();
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -60,7 +64,8 @@ private:
 	enum class EMode
 	{
 		Regular,
-		UltraHand
+		UltraHandPicking,
+		UltraHandManipulating
 	};
 
 	const FUH3rdPersonCameraSettings& GetSettings(EMode Mode) const;

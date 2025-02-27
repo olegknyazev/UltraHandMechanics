@@ -2,11 +2,12 @@
 
 #include "UHManipulator.h"
 #include "UHPicker.h"
+#include "UHBlock.h"
+#include "UltraHandMechanicsCharacter.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
-#include "UltraHandMechanicsCharacter.h"
 #include "GameFramework/Character.h"
 
 AUHPlayerController::AUHPlayerController()
@@ -75,7 +76,7 @@ void AUHPlayerController::UltraHandStart()
 
 	if (auto* const Character = GetUltraHandCharacter())
 	{
-		Character->ActivateUltraHandCamera();
+		Character->ActivateUltraHandPickingCamera();
 	}
 }
 
@@ -87,8 +88,17 @@ void AUHPlayerController::UltraHandPick()
 	{
 		if (auto* const SelectedBlock = Picker->SelectedBlock)
 		{
+			FRotator NewRotation = GetControlRotation();
+			NewRotation.Yaw = (SelectedBlock->GetPrimitiveComponent()->GetComponentLocation() - GetPawn()->GetActorLocation()).Rotation().Yaw;
+			SetControlRotation(NewRotation);
+			
 			Manipulator->StartManipulation(SelectedBlock);
 		}
+	}
+
+	if (auto* const Character = GetUltraHandCharacter())
+	{
+		Character->ActivateUltraHandManipulatingCamera();
 	}
 	
 	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))

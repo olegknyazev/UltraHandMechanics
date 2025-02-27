@@ -35,6 +35,7 @@ public:
 	AUltraHandMechanicsCharacter();
 
 	void ActivateRegularCamera();
-	void ActivateUltraHandCamera();
+	void ActivateUltraHandPickingCamera();
+	void ActivateUltraHandManipulatingCamera();
 };
 
