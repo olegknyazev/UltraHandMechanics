@@ -29,6 +29,7 @@ void AUHPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AUHPlayerController::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AUHPlayerController::Look);
 		EnhancedInputComponent->BindAction(UltraHandStartAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandStart);
+		EnhancedInputComponent->BindAction(UltraHandPickAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandPick);
 		EnhancedInputComponent->BindAction(UltraHandStopAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandStop);
 		EnhancedInputComponent->BindAction(UltraHandMoveAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandMove);
 		EnhancedInputComponent->BindAction(UltraHandLookAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandLook);
@@ -62,33 +63,50 @@ void AUHPlayerController::StopJumping()
 
 void AUHPlayerController::UltraHandStart()
 {
-	if (Picker)
+	UE_LOG(LogTemp, Display, TEXT("UltraHandStart"));
+	
+	Picker->SetPickingEnabled(true);
+	
+	if (auto* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
-		if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
-		{
-			if (auto* const SelectedBlock = Picker->SelectedBlock)
-			{
-				Manipulator->StartManipulation(SelectedBlock);
+		InputSubsystem->AddMappingContext(UltraHandPickingMappingContext, 1);
+	}
+}
 
-				if (auto* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
-				{
-					InputSubsystem->AddMappingContext(UltraHandMappingContext, 1);
-				}
-			}
+void AUHPlayerController::UltraHandPick()
+{
+	UE_LOG(LogTemp, Display, TEXT("UltraHandPick"));
+	
+	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	{
+		if (auto* const SelectedBlock = Picker->SelectedBlock)
+		{
+			Manipulator->StartManipulation(SelectedBlock);
 		}
+	}
+	
+	if (auto* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+	{
+		InputSubsystem->RemoveMappingContext(UltraHandPickingMappingContext);
+		InputSubsystem->AddMappingContext(UltraHandManipulatingMappingContext, 2);
 	}
 }
 
 void AUHPlayerController::UltraHandStop()
 {
+	UE_LOG(LogTemp, Display, TEXT("UltraHandStop"));
+	
+	Picker->SetPickingEnabled(false);
+	
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{
 		Manipulator->StopManipulation();
-		
-		if (auto* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
-		{
-			InputSubsystem->RemoveMappingContext(UltraHandMappingContext);
-		}
+	}
+	
+	if (auto* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+	{
+		InputSubsystem->RemoveMappingContext(UltraHandPickingMappingContext);
+		InputSubsystem->RemoveMappingContext(UltraHandManipulatingMappingContext);
 	}
 }
 

@@ -8,6 +8,21 @@ UUHPicker::UUHPicker()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
+void UUHPicker::SetPickingEnabled(bool bInEnabled)
+{
+	bPickingEnabled = bInEnabled;
+
+	if (!bPickingEnabled)
+	{
+		SetSelectedBlock(nullptr);
+	}
+}
+
+bool UUHPicker::IsPickingEnabled() const
+{
+	return bPickingEnabled;
+}
+
 void UUHPicker::BeginPlay()
 {
 	Super::BeginPlay();
@@ -17,7 +32,10 @@ void UUHPicker::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	SetSelectedBlock(TraceBlockUnderAim());
+	if (bPickingEnabled)
+	{
+		SetSelectedBlock(TraceBlockUnderAim());
+	}
 }
 
 void UUHPicker::SetSelectedBlock(UUHBlock* Block)

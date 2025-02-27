@@ -27,7 +27,10 @@ public:
 	UInputMappingContext* DefaultMappingContext;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
-	UInputMappingContext* UltraHandMappingContext;
+	UInputMappingContext* UltraHandPickingMappingContext;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputMappingContext* UltraHandManipulatingMappingContext;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* JumpAction;
@@ -40,6 +43,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* UltraHandStartAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* UltraHandPickAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* UltraHandStopAction;
@@ -61,6 +67,7 @@ private:
 	void Jump();
 	void StopJumping();
 	void UltraHandStart();
+	void UltraHandPick();
 	void UltraHandStop();
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);

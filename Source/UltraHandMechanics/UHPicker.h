@@ -17,6 +17,9 @@ public:
 
 	UPROPERTY()
 	UUHBlock* SelectedBlock;
+
+	void SetPickingEnabled(bool bInEnabled);
+	bool IsPickingEnabled() const;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -30,4 +33,6 @@ public:
 private:
 	void SetSelectedBlock(UUHBlock* Block);
 	UUHBlock* TraceBlockUnderAim() const;
+
+	bool bPickingEnabled;
 };
