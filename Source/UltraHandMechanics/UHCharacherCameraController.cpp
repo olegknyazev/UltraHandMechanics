@@ -3,15 +3,6 @@
 #include "GameFramework/SpringArmComponent.h"
 
 
-FUH3rdPersonCameraSettings FUH3rdPersonCameraSettings::BlendEaseOut(const FUH3rdPersonCameraSettings& Other, float Alpha, float Exp) const
-{
-	return FUH3rdPersonCameraSettings{
-		FMath::InterpEaseOut(Offset, Other.Offset, Alpha, Exp),
-		FMath::InterpEaseOut(Distance, Other.Distance, Alpha, Exp)
-	};
-}
-
-
 UUHCharacherCameraController::UUHCharacherCameraController()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -19,22 +10,24 @@ UUHCharacherCameraController::UUHCharacherCameraController()
 
 void UUHCharacherCameraController::ActivateRegularMode()
 {
-	NewMode = EMode::Regular;
-	CurrentBlendTime = BlendTime - CurrentBlendTime;
+	Mode = EMode::Regular;
 }
 
 void UUHCharacherCameraController::ActivateUltraHandMode()
 {
-	NewMode = EMode::UltraHand;
-	CurrentBlendTime = BlendTime - CurrentBlendTime;
+	Mode = EMode::UltraHand;
 }
 
 void UUHCharacherCameraController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CurrentBlendTime = BlendTime;
-	ApplySettings(GetSettings(Mode));
+	if (SpringArm)
+	{
+		const auto& Settings = GetSettings(Mode);
+		SpringArm->SocketOffset = Settings.Offset;
+		SpringArm->TargetArmLength = Settings.Distance;
+	}
 }
 
 void UUHCharacherCameraController::TickComponent(
@@ -44,18 +37,11 @@ void UUHCharacherCameraController::TickComponent(
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (NewMode != Mode)
+	if (SpringArm)
 	{
-		CurrentBlendTime = FMath::Clamp(CurrentBlendTime + DeltaTime, 0.f, BlendTime);
-		
-		const auto& CurrentSettings = GetSettings(Mode);
-		const auto& NewSettings = GetSettings(NewMode);
-		ApplySettings(CurrentSettings.BlendEaseOut(NewSettings, CurrentBlendTime / BlendTime, BlendExponent));
-		
-		if (CurrentBlendTime >= BlendTime)
-		{
-			Mode = NewMode;
-		}
+		const auto& Settings = GetSettings(Mode);
+		SpringArm->SocketOffset = FMath::VInterpTo(SpringArm->SocketOffset, Settings.Offset, DeltaTime, BlendSpeed);
+		SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, Settings.Distance, DeltaTime, BlendSpeed);
 	}
 }
 
@@ -69,14 +55,5 @@ const FUH3rdPersonCameraSettings& UUHCharacherCameraController::GetSettings(EMod
 		return UltraHandSettings;
 	default:
 		return RegularSettings;
-	}
-}
-
-void UUHCharacherCameraController::ApplySettings(const FUH3rdPersonCameraSettings& Settings)
-{
-	if (SpringArm)
-	{
-		SpringArm->SocketOffset = Settings.Offset;
-		SpringArm->TargetArmLength = Settings.Distance;
 	}
 }

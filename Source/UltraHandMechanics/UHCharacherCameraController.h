@@ -18,8 +18,6 @@ struct ULTRAHANDMECHANICS_API FUH3rdPersonCameraSettings
 
 	UPROPERTY(EditAnywhere)
 	float Distance;
-
-	FUH3rdPersonCameraSettings BlendEaseOut(const FUH3rdPersonCameraSettings& Other, float Alpha, float Exp) const;
 };
 
 
@@ -42,10 +40,7 @@ public:
 	FUH3rdPersonCameraSettings UltraHandSettings;
 
 	UPROPERTY(EditAnywhere)
-	float BlendTime = 1.f;
-
-	UPROPERTY(EditAnywhere)
-	float BlendExponent = 2.f;
+	float BlendSpeed = 1.f;
 
 	UUHCharacherCameraController();
 
@@ -69,9 +64,6 @@ private:
 	};
 
 	const FUH3rdPersonCameraSettings& GetSettings(EMode Mode) const;
-	void ApplySettings(const FUH3rdPersonCameraSettings& Settings);
 
 	EMode Mode = EMode::Regular;
-	EMode NewMode = EMode::Regular;
-	float CurrentBlendTime;
 };
