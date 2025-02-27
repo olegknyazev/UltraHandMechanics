@@ -6,6 +6,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "UltraHandMechanicsCharacter.h"
 #include "GameFramework/Character.h"
 
 AUHPlayerController::AUHPlayerController()
@@ -67,9 +68,14 @@ void AUHPlayerController::UltraHandStart()
 	
 	Picker->SetPickingEnabled(true);
 	
-	if (auto* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
 		InputSubsystem->AddMappingContext(UltraHandPickingMappingContext, 1);
+	}
+
+	if (auto* const Character = GetUltraHandCharacter())
+	{
+		Character->ActivateUltraHandCamera();
 	}
 }
 
@@ -85,7 +91,7 @@ void AUHPlayerController::UltraHandPick()
 		}
 	}
 	
-	if (auto* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
 		InputSubsystem->RemoveMappingContext(UltraHandPickingMappingContext);
 		InputSubsystem->AddMappingContext(UltraHandManipulatingMappingContext, 2);
@@ -103,10 +109,15 @@ void AUHPlayerController::UltraHandStop()
 		Manipulator->StopManipulation();
 	}
 	
-	if (auto* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
 		InputSubsystem->RemoveMappingContext(UltraHandPickingMappingContext);
 		InputSubsystem->RemoveMappingContext(UltraHandManipulatingMappingContext);
+	}
+	
+	if (auto* const Character = GetUltraHandCharacter())
+	{
+		Character->ActivateRegularCamera();
 	}
 }
 
@@ -160,4 +171,9 @@ void AUHPlayerController::UltraHandLook(const FInputActionValue& Value)
 	const auto LookYawValue = Value.Get<float>();
 	
 	GetPawn()->AddControllerYawInput(LookYawValue);
+}
+
+AUltraHandMechanicsCharacter* AUHPlayerController::GetUltraHandCharacter() const
+{
+	return Cast<AUltraHandMechanicsCharacter>(GetPawn());
 }

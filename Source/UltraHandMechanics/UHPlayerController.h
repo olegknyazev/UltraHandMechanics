@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "UHPlayerController.generated.h"
 
+class AUltraHandMechanicsCharacter;
 struct FInputActionValue;
 class UInputAction;
 class UInputMappingContext;
@@ -73,4 +74,6 @@ private:
 	void Look(const FInputActionValue& Value);
 	void UltraHandMove(const FInputActionValue& Value);
 	void UltraHandLook(const FInputActionValue& Value);
+
+	AUltraHandMechanicsCharacter* GetUltraHandCharacter() const;
 };

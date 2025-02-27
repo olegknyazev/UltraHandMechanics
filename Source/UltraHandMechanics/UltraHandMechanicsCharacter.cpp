@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "UHCharacherCameraController.h"
 #include "UHManipulator.h"
 #include "UHPicker.h"
 #include "UHPlayerController.h"
@@ -56,6 +57,20 @@ AUltraHandMechanicsCharacter::AUltraHandMechanicsCharacter()
 	Manipulator = CreateDefaultSubobject<UUHManipulator>(TEXT("Manipulator"));
 	Manipulator->SetupAttachment(GetRootComponent());
 
+	CameraController = CreateDefaultSubobject<UUHCharacherCameraController>(TEXT("CameraController"));
+	CameraController->Camera = FollowCamera;
+	CameraController->SpringArm = CameraBoom;
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+}
+
+void AUltraHandMechanicsCharacter::ActivateRegularCamera()
+{
+	CameraController->ActivateRegularMode();
+}
+
+void AUltraHandMechanicsCharacter::ActivateUltraHandCamera()
+{
+	CameraController->ActivateUltraHandMode();
 }
