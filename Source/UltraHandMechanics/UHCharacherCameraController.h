@@ -5,6 +5,7 @@
 #include "UHCharacherCameraController.generated.h"
 
 
+class UUHBlock;
 class UCameraComponent;
 class USpringArmComponent;
 
@@ -21,6 +22,37 @@ struct ULTRAHANDMECHANICS_API FUH3rdPersonCameraSettings
 
 	UPROPERTY(EditAnywhere)
 	float BlendSpeed;
+};
+
+
+USTRUCT()
+struct ULTRAHANDMECHANICS_API FUH3rdPersonManipulatingCameraSettings : public FUH3rdPersonCameraSettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	float MinPitch;
+
+	UPROPERTY(EditAnywhere)
+	float MaxPitch;
+
+	UPROPERTY(EditAnywhere)
+	float MaxDistance;
+
+	UPROPERTY(EditAnywhere)
+	float MaxPitchHorizontalDistance;
+	
+	UPROPERTY(EditAnywhere)
+	float MaxPitchVerticalDistance;
+	
+	UPROPERTY(EditAnywhere)
+	float MaxPitchHorizontalContribution;
+	
+	UPROPERTY(EditAnywhere)
+	float MaxPitchVerticalContribution;
+	
+	UPROPERTY(EditAnywhere)
+	float MaxDistanceCombinedDistance;
 };
 
 
@@ -43,13 +75,13 @@ public:
 	FUH3rdPersonCameraSettings UltraHandPickingSettings;
 
 	UPROPERTY(EditAnywhere)
-	FUH3rdPersonCameraSettings UltraHandManipulatingSettings;
+	FUH3rdPersonManipulatingCameraSettings UltraHandManipulatingSettings;
 
 	UUHCharacherCameraController();
 
 	void ActivateRegularMode();
 	void ActivateUltraHandPickingMode();
-	void ActivateUltraHandManipulatingMode();
+	void ActivateUltraHandManipulatingMode(UUHBlock* InBlockBeingManipulated);
 
 protected:
 	virtual void BeginPlay() override;
@@ -71,4 +103,11 @@ private:
 	const FUH3rdPersonCameraSettings& GetSettings(EMode Mode) const;
 
 	EMode Mode = EMode::Regular;
+
+	UPROPERTY()
+	UUHBlock* BlockBeingManipulated;
+
+	FRotator GetControlRotation() const;
+	FVector GetBlockRelativeLocation() const;
+	void ComputeManipulatingCameraFactors(float& DistanceFactor, float& PitchFactor) const;
 };

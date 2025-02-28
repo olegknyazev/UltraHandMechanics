@@ -24,6 +24,8 @@ public:
 
 	UPrimitiveComponent* GetPrimitiveComponent() const;
 
+	FVector GetBlockLocation() const;
+
 protected:
 	virtual void BeginPlay() override;
 

@@ -33,6 +33,11 @@ UPrimitiveComponent* UUHBlock::GetPrimitiveComponent() const
 	return GetOwner()->FindComponentByClass<UPrimitiveComponent>();
 }
 
+FVector UUHBlock::GetBlockLocation() const
+{
+	return GetPrimitiveComponent()->GetComponentLocation();
+}
+
 void UUHBlock::BeginPlay()
 {
 	Super::BeginPlay();
