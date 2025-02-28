@@ -34,6 +34,9 @@ public:
 	UInputMappingContext* UltraHandManipulatingMappingContext;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputMappingContext* UltraHandManipulatingTurningMappingContext;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* JumpAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
@@ -57,6 +60,24 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* UltraHandMoveAction;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* UltraHandTurnStartAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* UltraHandTurnStopAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* UltraHandTurnLeftAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* UltraHandTurnRightAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* UltraHandTurnUpAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* UltraHandTurnDownAction;
+	
 	AUHPlayerController();
 	
 	virtual void Tick(float DeltaSeconds) override;
@@ -74,6 +95,12 @@ private:
 	void Look(const FInputActionValue& Value);
 	void UltraHandMove(const FInputActionValue& Value);
 	void UltraHandLook(const FInputActionValue& Value);
+	void UltraHandTurnStart();
+	void UltraHandTurnStop();
+	void UltraHandTurnLeft();
+	void UltraHandTurnRight();
+	void UltraHandTurnUp();
+	void UltraHandTurnDown();
 
 	AUltraHandMechanicsCharacter* GetUltraHandCharacter() const;
 };

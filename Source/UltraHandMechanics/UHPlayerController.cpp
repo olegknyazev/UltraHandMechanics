@@ -35,6 +35,12 @@ void AUHPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(UltraHandStopAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandStop);
 		EnhancedInputComponent->BindAction(UltraHandMoveAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandMove);
 		EnhancedInputComponent->BindAction(UltraHandLookAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandLook);
+		EnhancedInputComponent->BindAction(UltraHandTurnStartAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandTurnStart);
+		EnhancedInputComponent->BindAction(UltraHandTurnStopAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandTurnStop);
+		EnhancedInputComponent->BindAction(UltraHandTurnLeftAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandTurnLeft);
+		EnhancedInputComponent->BindAction(UltraHandTurnRightAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandTurnRight);
+		EnhancedInputComponent->BindAction(UltraHandTurnUpAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandTurnUp);
+		EnhancedInputComponent->BindAction(UltraHandTurnDownAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandTurnDown);
 	}
 	
 	if (auto* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
@@ -123,6 +129,7 @@ void AUHPlayerController::UltraHandStop()
 	{
 		InputSubsystem->RemoveMappingContext(UltraHandPickingMappingContext);
 		InputSubsystem->RemoveMappingContext(UltraHandManipulatingMappingContext);
+		InputSubsystem->RemoveMappingContext(UltraHandManipulatingTurningMappingContext);
 	}
 	
 	if (auto* const Character = GetUltraHandCharacter())
@@ -181,6 +188,66 @@ void AUHPlayerController::UltraHandLook(const FInputActionValue& Value)
 	const auto LookYawValue = Value.Get<float>();
 	
 	GetPawn()->AddControllerYawInput(LookYawValue);
+}
+
+void AUHPlayerController::UltraHandTurnStart()
+{
+	UE_LOG(LogTemp, Display, TEXT("UltraHandTurnStart"));
+	
+	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+	{
+		InputSubsystem->AddMappingContext(UltraHandManipulatingTurningMappingContext, 3);
+	}
+}
+
+void AUHPlayerController::UltraHandTurnStop()
+{
+	UE_LOG(LogTemp, Display, TEXT("UltraHandTurnStop"));
+	
+	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+	{
+		InputSubsystem->RemoveMappingContext(UltraHandManipulatingTurningMappingContext);
+	}
+}
+
+void AUHPlayerController::UltraHandTurnLeft()
+{
+	UE_LOG(LogTemp, Display, TEXT("UltraHandTurnLeft"));
+	
+	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	{
+		Manipulator->TurnLeft();
+	}
+}
+
+void AUHPlayerController::UltraHandTurnRight()
+{
+	UE_LOG(LogTemp, Display, TEXT("UltraHandTurnRight"));
+	
+	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	{
+		Manipulator->TurnRight();
+	}
+}
+
+void AUHPlayerController::UltraHandTurnUp()
+{
+	UE_LOG(LogTemp, Display, TEXT("UltraHandTurnUp"));
+	
+	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	{
+		Manipulator->TurnUp();
+	}
+}
+
+void AUHPlayerController::UltraHandTurnDown()
+{
+	UE_LOG(LogTemp, Display, TEXT("UltraHandTurnDown"));
+	
+	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	{
+		Manipulator->TurnDown();
+	}
 }
 
 AUltraHandMechanicsCharacter* AUHPlayerController::GetUltraHandCharacter() const

@@ -12,12 +12,24 @@ class ULTRAHANDMECHANICS_API UUHManipulator : public USceneComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
+	UPROPERTY(EditAnywhere)
+	float BlockRotationSpeed;
+
+	UPROPERTY(EditAnywhere)
+	float SnapDegree;
+	
 	UUHManipulator();
 
 	void StartManipulation(UUHBlock* Block);
 	void StopManipulation();
+	
 	void MoveRelative(const FVector& Offset);
+
+	void TurnLeft();
+	void TurnRight();
+	void TurnUp();
+	void TurnDown();
 
 protected:
 	virtual void BeginPlay() override;
@@ -27,10 +39,13 @@ public:
 
 private:
 	FTransform GetOriginTransform() const;
+	FRotator SnapRotation(const FRotator& Rotation) const;
+	FQuat SnapRotation(const FQuat& Rotation) const;
 	
 	UPROPERTY()
 	UUHBlock* BlockBeingManipulated;
 
 	FVector BlockRelativeLocation;
-	FQuat BlockRelativeRotation;
+	FQuat BlockRelativeCurrentRotation;
+	FQuat BlockRelativeTargetRotation;
 };
