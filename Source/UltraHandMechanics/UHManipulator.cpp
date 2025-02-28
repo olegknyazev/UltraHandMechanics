@@ -21,6 +21,8 @@ void UUHManipulator::StartManipulation(UUHBlock* Block)
 			BlockRelativeLocation = OriginTransform.InverseTransformPosition(BlockPrimitive->GetComponentLocation());
 			BlockRelativeCurrentRotation = OriginTransform.InverseTransformRotation(BlockPrimitive->GetComponentRotation().Quaternion());
 			BlockRelativeTargetRotation = SnapRotation(BlockRelativeCurrentRotation);
+
+			BlockPrimitive->SetSimulatePhysics(false);
 		}
 		else
 		{
@@ -33,6 +35,13 @@ void UUHManipulator::StartManipulation(UUHBlock* Block)
 
 void UUHManipulator::StopManipulation()
 {
+	if (BlockBeingManipulated)
+	{
+		if (auto* const BlockPrimitive = BlockBeingManipulated->GetPrimitiveComponent())
+		{
+			BlockPrimitive->SetSimulatePhysics(true);
+		}
+	}
 	BlockBeingManipulated = nullptr;
 }
 
