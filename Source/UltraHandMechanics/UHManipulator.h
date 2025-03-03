@@ -41,7 +41,7 @@ private:
 	FTransform GetOriginTransform() const;
 	FRotator SnapRotation(const FRotator& Rotation) const;
 	FQuat SnapRotation(const FQuat& Rotation) const;
-	
+
 	UPROPERTY()
 	UUHBlock* BlockBeingManipulated;
 

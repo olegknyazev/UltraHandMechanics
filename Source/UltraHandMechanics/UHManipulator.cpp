@@ -37,6 +37,8 @@ void UUHManipulator::StopManipulation()
 {
 	if (BlockBeingManipulated)
 	{
+		BlockBeingManipulated->ResetTargetPlacement();
+		
 		if (auto* const BlockPrimitive = BlockBeingManipulated->GetPrimitiveComponent())
 		{
 			BlockPrimitive->SetSimulatePhysics(true);
@@ -102,12 +104,10 @@ void UUHManipulator::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	{
 		BlockRelativeCurrentRotation = FMath::QInterpTo(BlockRelativeCurrentRotation, BlockRelativeTargetRotation, DeltaTime, BlockRotationSpeed);
 		
-		if (auto* const BlockPrimitive = BlockBeingManipulated->GetPrimitiveComponent())
-		{
-			const auto OriginTransform = GetOriginTransform();
-			BlockPrimitive->SetWorldLocation(OriginTransform.TransformPosition(BlockRelativeLocation), false);
-			BlockPrimitive->SetWorldRotation(OriginTransform.TransformRotation(BlockRelativeCurrentRotation), false);
-		}
+		const auto OriginTransform = GetOriginTransform();
+		const auto TargetLocation = OriginTransform.TransformPosition(BlockRelativeLocation);
+		const auto TargetRotation = OriginTransform.TransformRotation(BlockRelativeCurrentRotation);
+		BlockBeingManipulated->SetTargetPlacement(TargetLocation, TargetRotation.Rotator());
 	}
 }
 

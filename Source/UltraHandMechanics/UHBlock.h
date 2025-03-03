@@ -5,6 +5,8 @@
 #include "UHBlock.generated.h"
 
 
+class UUHBlockMovementComponent;
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ULTRAHANDMECHANICS_API UUHBlock : public UActorComponent
 {
@@ -16,6 +18,12 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	UPrimitiveComponent* HighlightablePrimitive;
+
+	UPROPERTY(BlueprintReadWrite)
+	UUHBlockMovementComponent* MovementComponent;
+
+	UPROPERTY(EditAnywhere)
+	float TargetApproachTime;
 	
 	UUHBlock();
 
@@ -25,6 +33,9 @@ public:
 	UPrimitiveComponent* GetPrimitiveComponent() const;
 
 	FVector GetBlockLocation() const;
+
+	void SetTargetPlacement(const FVector& Location, const FRotator& Rotation);
+	void ResetTargetPlacement();
 
 protected:
 	virtual void BeginPlay() override;
@@ -37,4 +48,6 @@ private:
 	UMaterialInterface* OriginalMaterial;
 	
 	bool bHighlighted;
+	TOptional<FVector> TargetLocation;
+	TOptional<FRotator> TargetRotation;
 };
