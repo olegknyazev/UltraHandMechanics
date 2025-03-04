@@ -1,5 +1,6 @@
 #include "UHBaseBlock.h"
 
+#include "UHAttachable.h"
 #include "UHBlock.h"
 #include "UHBlockMovementComponent.h"
 
@@ -9,6 +10,7 @@ AUHBaseBlock::AUHBaseBlock()
 	PrimaryActorTick.bCanEverTick = true;
 
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	MeshComponent->SetSimulatePhysics(true);
 	RootComponent = MeshComponent;
 
 	MovementComponent = CreateDefaultSubobject<UUHBlockMovementComponent>(TEXT("Movement"));
@@ -17,6 +19,8 @@ AUHBaseBlock::AUHBaseBlock()
 	BlockComponent = CreateDefaultSubobject<UUHBlock>(TEXT("Block"));
 	BlockComponent->HighlightablePrimitive = MeshComponent;
 	BlockComponent->MovementComponent = MovementComponent;
+	
+	AttachableComponent = CreateDefaultSubobject<UUHAttachable>(TEXT("Attachable"));
 }
 
 void AUHBaseBlock::BeginPlay()

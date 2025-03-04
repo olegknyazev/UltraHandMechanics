@@ -4,6 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "UHBaseBlock.generated.h"
 
+class UUHAttachable;
 class UUHBlock;
 class UUHBlockMovementComponent;
 
@@ -21,6 +22,9 @@ public:
 	
 	UPROPERTY(VisibleAnywhere)
 	UUHBlock* BlockComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	UUHAttachable* AttachableComponent;
 	
 	AUHBaseBlock();
 
