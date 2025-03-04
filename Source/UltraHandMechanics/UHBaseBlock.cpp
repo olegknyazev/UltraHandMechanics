@@ -21,6 +21,7 @@ AUHBaseBlock::AUHBaseBlock()
 	BlockComponent->MovementComponent = MovementComponent;
 	
 	AttachableComponent = CreateDefaultSubobject<UUHAttachable>(TEXT("Attachable"));
+	AttachableComponent->AttachablePrimitive = MeshComponent;
 }
 
 void AUHBaseBlock::BeginPlay()

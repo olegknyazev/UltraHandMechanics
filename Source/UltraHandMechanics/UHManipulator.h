@@ -19,6 +19,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	float SnapDegree;
 	
+	UPROPERTY(EditAnywhere)
+	float MaxAttachDistance;
+	
 	UUHManipulator();
 
 	void StartManipulation(UUHBlock* Block);

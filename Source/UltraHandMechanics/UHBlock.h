@@ -16,10 +16,10 @@ public:
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* HighlightedMaterial;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere)
 	UPrimitiveComponent* HighlightablePrimitive;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere)
 	UUHBlockMovementComponent* MovementComponent;
 
 	UPROPERTY(EditAnywhere)

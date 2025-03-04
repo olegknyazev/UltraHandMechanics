@@ -1,5 +1,6 @@
 #include "UHManipulator.h"
 
+#include "UHAttachable.h"
 #include "UHBlock.h"
 
 UUHManipulator::UUHManipulator()
@@ -21,6 +22,11 @@ void UUHManipulator::StartManipulation(UUHBlock* Block)
 		BlockRelativeTargetRotation = SnapRotation(BlockRelativeCurrentRotation);
 
 		BlockBeingManipulated->SetManipulated(true);
+
+		if (auto* const Attachable = BlockBeingManipulated->GetOwner()->FindComponentByClass<UUHAttachable>())
+		{
+			Attachable->StartAttaching(MaxAttachDistance);
+		}
 	}
 }
 
@@ -29,7 +35,13 @@ void UUHManipulator::StopManipulation()
 	if (BlockBeingManipulated)
 	{
 		BlockBeingManipulated->SetManipulated(false);
+		
+		if (auto* const Attachable = BlockBeingManipulated->GetOwner()->FindComponentByClass<UUHAttachable>())
+		{
+			Attachable->StopAttaching();
+		}
 	}
+	
 	BlockBeingManipulated = nullptr;
 }
 

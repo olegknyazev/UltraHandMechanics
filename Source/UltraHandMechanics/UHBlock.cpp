@@ -37,7 +37,7 @@ void UUHBlock::SetManipulated(bool bInManipulated)
 		
 		UpdateMaterial();
 		
-		if (!bManipulated)
+		if (!bManipulated && MovementComponent)
 		{
 			MovementComponent->StopMovementImmediately();
 		}
