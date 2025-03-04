@@ -104,13 +104,13 @@ void AUHPlayerController::UltraHandPick()
 			{
 				Character->ActivateUltraHandManipulatingCamera(SelectedBlock);
 			}
-		}
-	}
 	
-	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
-	{
-		InputSubsystem->RemoveMappingContext(UltraHandPickingMappingContext);
-		InputSubsystem->AddMappingContext(UltraHandManipulatingMappingContext, 2);
+			if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+			{
+				InputSubsystem->RemoveMappingContext(UltraHandPickingMappingContext);
+				InputSubsystem->AddMappingContext(UltraHandManipulatingMappingContext, 2);
+			}
+		}
 	}
 }
 
