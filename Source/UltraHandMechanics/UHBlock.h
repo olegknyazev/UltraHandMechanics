@@ -30,12 +30,13 @@ public:
 	bool IsHighlighted() const;
 	void SetHighlighted(bool bInHighlighted);
 
-	UPrimitiveComponent* GetPrimitiveComponent() const;
+	bool IsManipulated() const;
+	void SetManipulated(bool bInManipulated);
 
 	FVector GetBlockLocation() const;
+	FRotator GetBlockRotation() const;
 
 	void SetTargetPlacement(const FVector& Location, const FRotator& Rotation);
-	void ResetTargetPlacement();
 
 protected:
 	virtual void BeginPlay() override;
@@ -44,10 +45,17 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
+	UPrimitiveComponent* GetPrimitiveComponent() const;
+
+	void UpdateMaterial();
+	
 	UPROPERTY()
 	UMaterialInterface* OriginalMaterial;
 	
-	bool bHighlighted;
-	TOptional<FVector> TargetLocation;
-	TOptional<FRotator> TargetRotation;
+	uint8 bHighlighted:1;
+	uint8 bManipulated:1;
+	uint8 bSelectedMaterialApplied:1;
+	
+	FVector TargetLocation;
+	FRotator TargetRotation;
 };

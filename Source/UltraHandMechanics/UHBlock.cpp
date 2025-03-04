@@ -17,17 +17,32 @@ void UUHBlock::SetHighlighted(bool bInHighlighted)
 {
 	if (bHighlighted != bInHighlighted)
 	{
-		if (HighlightablePrimitive)
-		{
-			if (!bHighlighted)
-			{
-				OriginalMaterial = HighlightablePrimitive->GetMaterial(0);
-			}
-
-			HighlightablePrimitive->SetMaterial(0, (bInHighlighted && HighlightedMaterial) ? HighlightedMaterial : OriginalMaterial);
-		}
-		
 		bHighlighted = bInHighlighted;
+		UpdateMaterial();
+	}
+}
+
+bool UUHBlock::IsManipulated() const
+{
+	return bManipulated;
+}
+
+void UUHBlock::SetManipulated(bool bInManipulated)
+{
+	if (bManipulated != bInManipulated)
+	{
+		bManipulated = bInManipulated;
+		TargetLocation = GetBlockLocation();
+		TargetRotation = GetBlockRotation();
+		
+		UpdateMaterial();
+		
+		if (!bManipulated)
+		{
+			MovementComponent->StopMovementImmediately();
+		}
+
+		GetPrimitiveComponent()->SetSimulatePhysics(!bManipulated);
 	}
 }
 
@@ -41,21 +56,15 @@ FVector UUHBlock::GetBlockLocation() const
 	return GetPrimitiveComponent()->GetComponentLocation();
 }
 
+FRotator UUHBlock::GetBlockRotation() const
+{
+	return GetPrimitiveComponent()->GetComponentRotation();
+}
+
 void UUHBlock::SetTargetPlacement(const FVector& Location, const FRotator& Rotation)
 {
 	TargetLocation = Location;
 	TargetRotation = Rotation;
-}
-
-void UUHBlock::ResetTargetPlacement()
-{
-	TargetLocation.Reset();
-	TargetRotation.Reset();
-
-	if (MovementComponent)
-	{
-		MovementComponent->StopMovementImmediately();
-	}
 }
 
 void UUHBlock::BeginPlay()
@@ -67,13 +76,28 @@ void UUHBlock::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (TargetLocation.IsSet())
+	if (bManipulated)
 	{
 		if (MovementComponent)
 		{
-			MovementComponent->Velocity = (*TargetLocation - GetOwner()->GetActorLocation()) / TargetApproachTime;
-			MovementComponent->AngularVelocity = (*TargetRotation - GetOwner()->GetActorRotation()).GetNormalized() * (1.f / TargetApproachTime);
+			MovementComponent->Velocity = (TargetLocation - GetOwner()->GetActorLocation()) / TargetApproachTime;
+			MovementComponent->AngularVelocity = (TargetRotation - GetOwner()->GetActorRotation()).GetNormalized() * (1.f / TargetApproachTime);
 		}
+	}
+}
+
+void UUHBlock::UpdateMaterial()
+{
+	if (HighlightablePrimitive)
+	{
+		if (!bSelectedMaterialApplied)
+		{
+			OriginalMaterial = HighlightablePrimitive->GetMaterial(0);
+		}
+
+		bSelectedMaterialApplied = bHighlighted || bManipulated;
+
+		HighlightablePrimitive->SetMaterial(0, (bSelectedMaterialApplied && HighlightedMaterial) ? HighlightedMaterial : OriginalMaterial);
 	}
 }
 

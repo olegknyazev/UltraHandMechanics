@@ -15,21 +15,12 @@ void UUHManipulator::StartManipulation(UUHBlock* Block)
 
 	if (BlockBeingManipulated)
 	{
-		if (auto* const BlockPrimitive = BlockBeingManipulated->GetPrimitiveComponent())
-		{
-			const auto OriginTransform = GetOriginTransform();
-			BlockRelativeLocation = OriginTransform.InverseTransformPosition(BlockPrimitive->GetComponentLocation());
-			BlockRelativeCurrentRotation = OriginTransform.InverseTransformRotation(BlockPrimitive->GetComponentRotation().Quaternion());
-			BlockRelativeTargetRotation = SnapRotation(BlockRelativeCurrentRotation);
+		const FTransform OriginTransform = GetOriginTransform();
+		BlockRelativeLocation = OriginTransform.InverseTransformPosition(BlockBeingManipulated->GetBlockLocation());
+		BlockRelativeCurrentRotation = OriginTransform.InverseTransformRotation(BlockBeingManipulated->GetBlockRotation().Quaternion());
+		BlockRelativeTargetRotation = SnapRotation(BlockRelativeCurrentRotation);
 
-			BlockPrimitive->SetSimulatePhysics(false);
-		}
-		else
-		{
-			BlockRelativeLocation = FVector::Zero();
-			BlockRelativeCurrentRotation = FQuat::Identity;
-			BlockRelativeTargetRotation = FQuat::Identity;
-		}
+		BlockBeingManipulated->SetManipulated(true);
 	}
 }
 
@@ -37,12 +28,7 @@ void UUHManipulator::StopManipulation()
 {
 	if (BlockBeingManipulated)
 	{
-		BlockBeingManipulated->ResetTargetPlacement();
-		
-		if (auto* const BlockPrimitive = BlockBeingManipulated->GetPrimitiveComponent())
-		{
-			BlockPrimitive->SetSimulatePhysics(true);
-		}
+		BlockBeingManipulated->SetManipulated(false);
 	}
 	BlockBeingManipulated = nullptr;
 }
@@ -103,10 +89,10 @@ void UUHManipulator::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	if (BlockBeingManipulated)
 	{
 		BlockRelativeCurrentRotation = FMath::QInterpTo(BlockRelativeCurrentRotation, BlockRelativeTargetRotation, DeltaTime, BlockRotationSpeed);
-		
-		const auto OriginTransform = GetOriginTransform();
-		const auto TargetLocation = OriginTransform.TransformPosition(BlockRelativeLocation);
-		const auto TargetRotation = OriginTransform.TransformRotation(BlockRelativeCurrentRotation);
+
+		const FTransform OriginTransform = GetOriginTransform();
+		const FVector TargetLocation = OriginTransform.TransformPosition(BlockRelativeLocation);
+		const FQuat TargetRotation = OriginTransform.TransformRotation(BlockRelativeCurrentRotation);
 		BlockBeingManipulated->SetTargetPlacement(TargetLocation, TargetRotation.Rotator());
 	}
 }
