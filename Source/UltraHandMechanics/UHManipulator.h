@@ -34,6 +34,8 @@ public:
 	void TurnUp();
 	void TurnDown();
 
+	bool StartSticking();
+
 protected:
 	virtual void BeginPlay() override;
 

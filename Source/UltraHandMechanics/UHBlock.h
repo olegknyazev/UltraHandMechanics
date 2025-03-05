@@ -5,6 +5,7 @@
 #include "UHBlock.generated.h"
 
 
+class UUHAttachable;
 class UUHBlockMovementComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -16,12 +17,15 @@ public:
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* HighlightedMaterial;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY()
 	UPrimitiveComponent* HighlightablePrimitive;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY()
 	UUHBlockMovementComponent* MovementComponent;
 
+	UPROPERTY()
+	UUHAttachable* Attachable;
+	
 	UPROPERTY(EditAnywhere)
 	float TargetApproachTime;
 	
@@ -37,6 +41,8 @@ public:
 	FRotator GetBlockRotation() const;
 
 	void SetTargetPlacement(const FVector& Location, const FRotator& Rotation);
+
+	bool StartSticking();
 
 protected:
 	virtual void BeginPlay() override;

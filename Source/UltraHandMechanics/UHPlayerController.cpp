@@ -41,6 +41,7 @@ void AUHPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(UltraHandTurnRightAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandTurnRight);
 		EnhancedInputComponent->BindAction(UltraHandTurnUpAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandTurnUp);
 		EnhancedInputComponent->BindAction(UltraHandTurnDownAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandTurnDown);
+		EnhancedInputComponent->BindAction(UltraHandAttachAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandAttach);
 	}
 	
 	if (auto* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
@@ -247,6 +248,19 @@ void AUHPlayerController::UltraHandTurnDown()
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{
 		Manipulator->TurnDown();
+	}
+}
+
+void AUHPlayerController::UltraHandAttach()
+{
+	UE_LOG(LogTemp, Display, TEXT("UltraHandAttach"));
+
+	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	{
+		if (Manipulator->StartSticking())
+		{
+			UltraHandStop();
+		}
 	}
 }
 

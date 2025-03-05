@@ -89,6 +89,20 @@ void UUHManipulator::TurnDown()
 	}
 }
 
+bool UUHManipulator::StartSticking()
+{
+	if (BlockBeingManipulated)
+	{
+		if (BlockBeingManipulated->StartSticking())
+		{
+			BlockBeingManipulated = nullptr;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void UUHManipulator::BeginPlay()
 {
 	Super::BeginPlay();

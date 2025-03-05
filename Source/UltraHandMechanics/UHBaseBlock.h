@@ -21,11 +21,11 @@ public:
 	UUHBlockMovementComponent* MovementComponent;
 	
 	UPROPERTY(VisibleAnywhere)
-	UUHBlock* BlockComponent;
-
-	UPROPERTY(VisibleAnywhere)
 	UUHAttachable* AttachableComponent;
 	
+	UPROPERTY(VisibleAnywhere)
+	UUHBlock* BlockComponent;
+
 	AUHBaseBlock();
 
 protected:

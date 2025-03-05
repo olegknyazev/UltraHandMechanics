@@ -1,5 +1,6 @@
 #include "UHBlock.h"
 
+#include "UHAttachable.h"
 #include "UHBlockMovementComponent.h"
 #include "GameFramework/MovementComponent.h"
 
@@ -65,6 +66,29 @@ void UUHBlock::SetTargetPlacement(const FVector& Location, const FRotator& Rotat
 {
 	TargetLocation = Location;
 	TargetRotation = Rotation;
+}
+
+bool UUHBlock::StartSticking()
+{
+	if (Attachable)
+	{
+		if (Attachable->StartSticking())
+		{
+			if (bManipulated)
+			{
+				bManipulated = false;
+				if (MovementComponent)
+				{
+					MovementComponent->StopMovementImmediately();
+				}
+				UpdateMaterial();
+			}
+			
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void UUHBlock::BeginPlay()

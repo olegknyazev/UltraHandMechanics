@@ -15,13 +15,15 @@ AUHBaseBlock::AUHBaseBlock()
 
 	MovementComponent = CreateDefaultSubobject<UUHBlockMovementComponent>(TEXT("Movement"));
 	MovementComponent->UpdatedComponent = MeshComponent;
+	
+	AttachableComponent = CreateDefaultSubobject<UUHAttachable>(TEXT("Attachable"));
+	AttachableComponent->AttachablePrimitive = MeshComponent;
+	AttachableComponent->MovementComponent = MovementComponent;
 
 	BlockComponent = CreateDefaultSubobject<UUHBlock>(TEXT("Block"));
 	BlockComponent->HighlightablePrimitive = MeshComponent;
 	BlockComponent->MovementComponent = MovementComponent;
-	
-	AttachableComponent = CreateDefaultSubobject<UUHAttachable>(TEXT("Attachable"));
-	AttachableComponent->AttachablePrimitive = MeshComponent;
+	BlockComponent->Attachable = AttachableComponent;
 }
 
 void AUHBaseBlock::BeginPlay()

@@ -77,6 +77,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* UltraHandTurnDownAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* UltraHandAttachAction;
 	
 	AUHPlayerController();
 	
@@ -101,6 +104,7 @@ private:
 	void UltraHandTurnRight();
 	void UltraHandTurnUp();
 	void UltraHandTurnDown();
+	void UltraHandAttach();
 
 	AUltraHandMechanicsCharacter* GetUltraHandCharacter() const;
 };

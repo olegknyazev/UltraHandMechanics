@@ -5,6 +5,8 @@
 #include "UHAttachable.generated.h"
 
 
+class UUHBlockMovementComponent;
+
 USTRUCT()
 struct ULTRAHANDMECHANICS_API FUHAttachmentSocket
 {
@@ -21,17 +23,28 @@ class ULTRAHANDMECHANICS_API UUHAttachable : public UActorComponent
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY()
 	UPrimitiveComponent* AttachablePrimitive;
 
+	UPROPERTY()
+	UUHBlockMovementComponent* MovementComponent;
+	
 	UPROPERTY(EditAnywhere)
 	TArray<FUHAttachmentSocket> Sockets;
+
+	UPROPERTY(EditAnywhere)
+	float RotationSpeed;
+	
+	UPROPERTY(EditAnywhere)
+	float MovementSpeed;
 	
 	UUHAttachable();
 
 	void StartAttaching(float InMaxAttachDistance);
 	void StopAttaching();
 
+	bool StartSticking();
+	
 protected:
 	virtual void BeginPlay() override;
 
@@ -42,7 +55,27 @@ public:
 		FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
-	bool bAttachInProgress;
-	float MaxAttachDistance;
+	static FRotator SnappedRelativeRotation(USceneComponent* Component, USceneComponent* Space);
+
+	FRotator OurTargetRotationInWorldSpace() const;
+	FRotator TheirTargetRotationInWorldSpace() const;
+
+	void UpdateCurrentTarget();
+	void StopSticking();
 	
+	bool bAttachInProgress;
+	bool bStickInProgress;
+	float MaxAttachDistance;
+
+	UPROPERTY()
+	UUHAttachable* CurrentTarget;
+	int32 CurrentTheirSocketIndex;
+	int32 CurrentOurSocketIndex;
+	float CurrentDistance;
+
+	FRotator TheirTargetRotation;
+	FRotator OurTargetRotation;
+
+	float RemainingDistance = -1.f;
+	float RemainingAngle = -1.f;
 };
