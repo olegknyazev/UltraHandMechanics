@@ -139,7 +139,7 @@ FRotator UUHAttachable::TheirTargetRotationInWorldSpace() const
 void UUHAttachable::UpdateCurrentTarget()
 {
 	const FTransform& AttachableTransform = AttachablePrimitive->GetComponentTransform(); 
-		
+
 	const FCollisionShape InflatedShape = AttachablePrimitive->GetCollisionShape(MaxAttachDistance);
 	FCollisionQueryParams QueryParams;
 	QueryParams.bTraceComplex = false;
@@ -209,21 +209,16 @@ void UUHAttachable::StopSticking()
 
 void UUHAttachable::Attach(UUHAttachable* Other)
 {
-	auto* ConstraintComponent = NewObject<UPhysicsConstraintComponent>(this);
-	ConstraintComponent->SetupAttachment(AttachablePrimitive);
+	auto* OtherMeshComponent = Cast<UStaticMeshComponent>(Other->AttachablePrimitive);
+	
+	auto* NewMeshComponent = NewObject<UStaticMeshComponent>(GetOwner());
+	NewMeshComponent->SetupAttachment(AttachablePrimitive);
+	NewMeshComponent->SetWorldLocation(OtherMeshComponent->GetComponentLocation());
+	NewMeshComponent->SetWorldRotation(OtherMeshComponent->GetComponentRotation());
+	NewMeshComponent->SetStaticMesh(OtherMeshComponent->GetStaticMesh());
+	NewMeshComponent->SetMaterial(0, OtherMeshComponent->GetMaterial(0));
+	NewMeshComponent->RegisterComponent();
+	NewMeshComponent->WeldTo(AttachablePrimitive);
 
-	ConstraintComponent->ConstraintActor1 = GetOwner();
-	ConstraintComponent->ComponentName1.ComponentName = FName(AttachablePrimitive->GetName());
-
-	ConstraintComponent->ConstraintActor2 = Other->GetOwner();
-	ConstraintComponent->ComponentName2.ComponentName = FName(Other->AttachablePrimitive->GetName());
-
-	ConstraintComponent->SetAngularTwistLimit(ACM_Locked, 0.f);
-	ConstraintComponent->SetAngularSwing1Limit(ACM_Locked, 0.f);
-	ConstraintComponent->SetAngularSwing2Limit(ACM_Locked, 0.f);
-	ConstraintComponent->SetLinearXLimit(LCM_Locked, 0.f);
-	ConstraintComponent->SetLinearYLimit(LCM_Locked, 0.f);
-	ConstraintComponent->SetLinearZLimit(LCM_Locked, 0.f);
-
-	ConstraintComponent->RegisterComponent();
+	Other->GetOwner()->Destroy();
 }
