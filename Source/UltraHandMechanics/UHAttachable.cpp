@@ -2,6 +2,7 @@
 
 #include "UHBlockMovementComponent.h"
 #include "Engine/OverlapResult.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
 
 
 UUHAttachable::UUHAttachable()
@@ -99,6 +100,8 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		if (NewRemainingDistance < 1.f && NewRemainingAngle < 0.01f)
 		{
 			UE_LOG(LogTemp, Display, TEXT("Sticking complete"));
+
+			Attach(CurrentTarget);
 
 			StopSticking();
 		}
@@ -202,4 +205,25 @@ void UUHAttachable::StopSticking()
 		
 		bStickInProgress = false;
 	}
+}
+
+void UUHAttachable::Attach(UUHAttachable* Other)
+{
+	auto* ConstraintComponent = NewObject<UPhysicsConstraintComponent>(this);
+	ConstraintComponent->SetupAttachment(AttachablePrimitive);
+
+	ConstraintComponent->ConstraintActor1 = GetOwner();
+	ConstraintComponent->ComponentName1.ComponentName = FName(AttachablePrimitive->GetName());
+
+	ConstraintComponent->ConstraintActor2 = Other->GetOwner();
+	ConstraintComponent->ComponentName2.ComponentName = FName(Other->AttachablePrimitive->GetName());
+
+	ConstraintComponent->SetAngularTwistLimit(ACM_Locked, 0.f);
+	ConstraintComponent->SetAngularSwing1Limit(ACM_Locked, 0.f);
+	ConstraintComponent->SetAngularSwing2Limit(ACM_Locked, 0.f);
+	ConstraintComponent->SetLinearXLimit(LCM_Locked, 0.f);
+	ConstraintComponent->SetLinearYLimit(LCM_Locked, 0.f);
+	ConstraintComponent->SetLinearZLimit(LCM_Locked, 0.f);
+
+	ConstraintComponent->RegisterComponent();
 }

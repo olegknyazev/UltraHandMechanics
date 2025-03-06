@@ -5,6 +5,7 @@
 #include "UHAttachable.generated.h"
 
 
+class UPhysicsConstraintComponent;
 class UUHBlockMovementComponent;
 
 USTRUCT()
@@ -37,7 +38,7 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	float MovementSpeed;
-	
+
 	UUHAttachable();
 
 	void StartAttaching(float InMaxAttachDistance);
@@ -62,6 +63,8 @@ private:
 
 	void UpdateCurrentTarget();
 	void StopSticking();
+
+	void Attach(UUHAttachable* Other);
 	
 	bool bAttachInProgress;
 	bool bStickInProgress;
