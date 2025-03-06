@@ -26,6 +26,16 @@ AUHBaseBlock::AUHBaseBlock()
 	BlockComponent->Attachable = AttachableComponent;
 }
 
+void AUHBaseBlock::SetHighlightedPart(UStaticMeshComponent* Component)
+{
+	BlockComponent->SetHighlighted(Component != nullptr);
+}
+
+bool AUHBaseBlock::AnyPartHighlighted() const
+{
+	return BlockComponent->IsHighlighted();
+}
+
 void AUHBaseBlock::BeginPlay()
 {
 	Super::BeginPlay();

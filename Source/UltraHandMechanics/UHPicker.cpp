@@ -1,11 +1,21 @@
 #include "UHPicker.h"
 
-#include "UHBlock.h"
+#include "UHBaseBlock.h"
 
 
 UUHPicker::UUHPicker()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+}
+
+AUHBaseBlock* UUHPicker::GetSelectedBlock() const
+{
+	return SelectedBlock;
+}
+
+UStaticMeshComponent* UUHPicker::GetSelectedPart() const
+{
+	return SelectedMesh;
 }
 
 void UUHPicker::SetPickingEnabled(bool bInEnabled)
@@ -14,7 +24,7 @@ void UUHPicker::SetPickingEnabled(bool bInEnabled)
 
 	if (!bPickingEnabled)
 	{
-		SetSelectedBlock(nullptr);
+		SetSelectedPart(nullptr);
 	}
 }
 
@@ -34,31 +44,41 @@ void UUHPicker::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 
 	if (bPickingEnabled)
 	{
-		SetSelectedBlock(TraceBlockUnderAim());
+		SetSelectedPart(TraceMeshUnderAim());
 	}
 }
 
-void UUHPicker::SetSelectedBlock(UUHBlock* Block)
+void UUHPicker::SetSelectedPart(UStaticMeshComponent* Part)
 {
+	auto* const Block = Part ? Cast<AUHBaseBlock>(Part->GetOwner()) : nullptr;
+	bool bBlockChanged = false;
 	if (SelectedBlock != Block)
 	{
 		if (SelectedBlock)
 		{
-			SelectedBlock->SetHighlighted(false);
+			SelectedBlock->SetHighlightedPart(nullptr);
 		}
 
 		SelectedBlock = Block;
+		bBlockChanged = true;
+	}
 
+	if (bBlockChanged || SelectedMesh != Part)
+	{
 		if (SelectedBlock)
 		{
-			SelectedBlock->SetHighlighted(true);
+			SelectedBlock->SetHighlightedPart(Part);
 		}
-			
-		UE_LOG(LogTemp, Display, TEXT("SelectedBlock is now %s"), SelectedBlock ? *SelectedBlock->GetName() : TEXT("None"));
+		
+		SelectedMesh = Part;
+
+		UE_LOG(LogTemp, Display, TEXT("SelectedBlock is now %s (%s)"),
+        	SelectedBlock ? *SelectedBlock->GetName() : TEXT("None"),
+        	SelectedMesh ? *SelectedMesh->GetName() : TEXT("None"));
 	}
 }
 
-UUHBlock* UUHPicker::TraceBlockUnderAim() const
+UStaticMeshComponent* UUHPicker::TraceMeshUnderAim() const
 {
 	auto* const PlayerController = Cast<APlayerController>(GetOwner());
 	if (!PlayerController)
@@ -74,6 +94,6 @@ UUHBlock* UUHPicker::TraceBlockUnderAim() const
 	{
 		return nullptr;
 	}
-	
-	return Hit.GetActor()->FindComponentByClass<UUHBlock>();
+
+	return Cast<UStaticMeshComponent>(Hit.GetComponent());
 }

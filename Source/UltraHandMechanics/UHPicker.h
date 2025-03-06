@@ -5,6 +5,7 @@
 #include "UHPicker.generated.h"
 
 
+class AUHBaseBlock;
 class UUHBlock;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -15,9 +16,9 @@ class ULTRAHANDMECHANICS_API UUHPicker : public UActorComponent
 public:
 	UUHPicker();
 
-	UPROPERTY()
-	UUHBlock* SelectedBlock;
-
+	AUHBaseBlock* GetSelectedBlock() const;
+	UStaticMeshComponent* GetSelectedPart() const;
+	
 	void SetPickingEnabled(bool bInEnabled);
 	bool IsPickingEnabled() const;
 	
@@ -31,8 +32,14 @@ public:
 		FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
-	void SetSelectedBlock(UUHBlock* Block);
-	UUHBlock* TraceBlockUnderAim() const;
+	void SetSelectedPart(UStaticMeshComponent* Part);
+	UStaticMeshComponent* TraceMeshUnderAim() const;
 
 	bool bPickingEnabled;
+
+	UPROPERTY()
+	AUHBaseBlock* SelectedBlock;
+	
+	UPROPERTY()
+	UStaticMeshComponent* SelectedMesh;
 };
