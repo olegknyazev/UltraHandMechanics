@@ -5,7 +5,7 @@
 #include "UHCharacherCameraController.generated.h"
 
 
-class UUHBlock;
+class USceneComponent;
 class UCameraComponent;
 class USpringArmComponent;
 
@@ -81,7 +81,7 @@ public:
 
 	void ActivateRegularMode();
 	void ActivateUltraHandPickingMode();
-	void ActivateUltraHandManipulatingMode(UUHBlock* InBlockBeingManipulated);
+	void ActivateUltraHandManipulatingMode(USceneComponent* InManipulatedComponent);
 
 protected:
 	virtual void BeginPlay() override;
@@ -105,7 +105,7 @@ private:
 	EMode Mode = EMode::Regular;
 
 	UPROPERTY()
-	UUHBlock* BlockBeingManipulated;
+	USceneComponent* ManipulatedComponent;
 
 	FRotator GetControlRotation() const;
 	FVector GetBlockRelativeLocation() const;

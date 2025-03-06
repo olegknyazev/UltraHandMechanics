@@ -12,7 +12,7 @@ UUHCharacherCameraController::UUHCharacherCameraController()
 void UUHCharacherCameraController::ActivateRegularMode()
 {
 	Mode = EMode::Regular;
-	BlockBeingManipulated = nullptr;
+	ManipulatedComponent = nullptr;
 	
 	if (SpringArm)
 	{
@@ -23,7 +23,7 @@ void UUHCharacherCameraController::ActivateRegularMode()
 void UUHCharacherCameraController::ActivateUltraHandPickingMode()
 {
 	Mode = EMode::UltraHandPicking;
-	BlockBeingManipulated = nullptr;
+	ManipulatedComponent = nullptr;
 	
 	if (SpringArm)
 	{
@@ -31,12 +31,12 @@ void UUHCharacherCameraController::ActivateUltraHandPickingMode()
 	}
 }
 
-void UUHCharacherCameraController::ActivateUltraHandManipulatingMode(UUHBlock* InBlockBeingManipulated)
+void UUHCharacherCameraController::ActivateUltraHandManipulatingMode(USceneComponent* InManipulatedComponent)
 {
-	ensure(InBlockBeingManipulated);
+	ensure(InManipulatedComponent);
 	
 	Mode = EMode::UltraHandManipulating;
-	BlockBeingManipulated = InBlockBeingManipulated;
+	ManipulatedComponent = InManipulatedComponent;
 	
 	if (SpringArm)
 	{
@@ -122,7 +122,7 @@ FRotator UUHCharacherCameraController::GetControlRotation() const
 
 FVector UUHCharacherCameraController::GetBlockRelativeLocation() const
 {
-	if (!BlockBeingManipulated)
+	if (!ManipulatedComponent)
 	{
 		return FVector::Zero();
 	}
@@ -130,7 +130,7 @@ FVector UUHCharacherCameraController::GetBlockRelativeLocation() const
 	FRotator Rotation{GetControlRotation()};
 	Rotation.Pitch = 0.f;
 	FTransform OriginTransform{Rotation, SpringArm->GetComponentLocation()};
-	return OriginTransform.InverseTransformPosition(BlockBeingManipulated->GetBlockLocation());
+	return OriginTransform.InverseTransformPosition(ManipulatedComponent->GetComponentLocation());
 }
 
 void UUHCharacherCameraController::ComputeManipulatingCameraFactors(float& DistanceFactor, float& PitchFactor) const

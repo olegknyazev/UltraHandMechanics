@@ -56,7 +56,7 @@ void AUHCharacter::ActivateUltraHandPickingCamera()
 	CameraController->ActivateUltraHandPickingMode();
 }
 
-void AUHCharacter::ActivateUltraHandManipulatingCamera(UUHBlock* InBlockBeingManipulated)
+void AUHCharacter::ActivateUltraHandManipulatingCamera(USceneComponent* ManipulatedComponent)
 {
-	CameraController->ActivateUltraHandManipulatingMode(InBlockBeingManipulated);
+	CameraController->ActivateUltraHandManipulatingMode(ManipulatedComponent);
 }

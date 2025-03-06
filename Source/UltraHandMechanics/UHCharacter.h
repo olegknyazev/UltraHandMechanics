@@ -6,7 +6,7 @@
 
 class UUHCharacherCameraController;
 class UUHManipulator;
-class UUHBlock;
+class USceneComponent;
 class USpringArmComponent;
 class UCameraComponent;
 
@@ -32,6 +32,6 @@ public:
 
 	void ActivateRegularCamera();
 	void ActivateUltraHandPickingCamera();
-	void ActivateUltraHandManipulatingCamera(UUHBlock* InBlockBeingManipulated);
+	void ActivateUltraHandManipulatingCamera(USceneComponent* ManipulatedComponent);
 };
 

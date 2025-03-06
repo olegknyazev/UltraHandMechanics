@@ -103,7 +103,7 @@ void AUHPlayerController::UltraHandPick()
 
 			if (auto* const Character = GetUltraHandCharacter())
 			{
-				Character->ActivateUltraHandManipulatingCamera(SelectedBlock->BlockComponent);
+				Character->ActivateUltraHandManipulatingCamera(SelectedBlock->MeshComponent);
 			}
 	
 			if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
