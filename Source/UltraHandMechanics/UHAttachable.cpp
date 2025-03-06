@@ -221,4 +221,15 @@ void UUHAttachable::Attach(UUHAttachable* Other)
 	NewMeshComponent->WeldTo(AttachablePrimitive);
 
 	Other->GetOwner()->Destroy();
+
+	// Need to:
+	//  - highlight the mesh we're looking at
+	//  - the selected mesh should be the center of manipulation
+	//  - consider the sockets of the attached blocks as well
+	//  - be able to join composites
+
+	// Also we need to be able to DETACH attached mesh:
+	//  - it breaks all the attachments
+	//  - when detaching a block, it should get its own actor
+	//  - all the attachments of the detached blocks should remain
 }

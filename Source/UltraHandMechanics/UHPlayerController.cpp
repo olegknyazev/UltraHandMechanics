@@ -3,7 +3,7 @@
 #include "UHManipulator.h"
 #include "UHPicker.h"
 #include "UHBlock.h"
-#include "UltraHandMechanicsCharacter.h"
+#include "UHCharacter.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -264,7 +264,7 @@ void AUHPlayerController::UltraHandAttach()
 	}
 }
 
-AUltraHandMechanicsCharacter* AUHPlayerController::GetUltraHandCharacter() const
+AUHCharacter* AUHPlayerController::GetUltraHandCharacter() const
 {
-	return Cast<AUltraHandMechanicsCharacter>(GetPawn());
+	return Cast<AUHCharacter>(GetPawn());
 }

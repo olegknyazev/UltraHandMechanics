@@ -1,11 +1,8 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Logging/LogMacros.h"
-#include "UltraHandMechanicsCharacter.generated.h"
+#include "UHCharacter.generated.h"
 
 class UUHCharacherCameraController;
 class UUHManipulator;
@@ -13,10 +10,8 @@ class UUHBlock;
 class USpringArmComponent;
 class UCameraComponent;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
-
 UCLASS(config=Game)
-class AUltraHandMechanicsCharacter : public ACharacter
+class AUHCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -33,7 +28,7 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	UUHCharacherCameraController* CameraController;
 	
-	AUltraHandMechanicsCharacter();
+	AUHCharacter();
 
 	void ActivateRegularCamera();
 	void ActivateUltraHandPickingCamera();

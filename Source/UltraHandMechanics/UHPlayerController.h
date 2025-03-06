@@ -1,20 +1,15 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "UHPlayerController.generated.h"
 
-class AUltraHandMechanicsCharacter;
+class AUHCharacter;
+class UUHPicker;
 struct FInputActionValue;
 class UInputAction;
 class UInputMappingContext;
-class UUHPicker;
 
-/**
- * 
- */
 UCLASS()
 class ULTRAHANDMECHANICS_API AUHPlayerController : public APlayerController
 {
@@ -106,5 +101,5 @@ private:
 	void UltraHandTurnDown();
 	void UltraHandAttach();
 
-	AUltraHandMechanicsCharacter* GetUltraHandCharacter() const;
+	AUHCharacter* GetUltraHandCharacter() const;
 };
