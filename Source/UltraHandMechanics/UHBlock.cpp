@@ -19,6 +19,7 @@ void UUHBlock::SetHighlighted(bool bInHighlighted)
 	if (bHighlighted != bInHighlighted)
 	{
 		bHighlighted = bInHighlighted;
+		
 		UpdateMaterial();
 	}
 }
@@ -49,7 +50,30 @@ void UUHBlock::SetManipulated(bool bInManipulated)
 
 UPrimitiveComponent* UUHBlock::GetPrimitiveComponent() const
 {
-	return GetOwner()->FindComponentByClass<UPrimitiveComponent>();
+	return PrimitiveComponent;
+}
+
+void UUHBlock::SetPrimitiveComponent(UPrimitiveComponent* InPrimitiveComponent)
+{
+	if (PrimitiveComponent != InPrimitiveComponent)
+	{
+		if (PrimitiveComponent && bSelectedMaterialApplied)
+		{
+			PrimitiveComponent->SetMaterial(0, OriginalMaterial);
+		}
+		
+		PrimitiveComponent = InPrimitiveComponent;
+
+		if (PrimitiveComponent && bSelectedMaterialApplied)
+		{
+			OriginalMaterial = PrimitiveComponent->GetMaterial(0);
+			
+			if (HighlightedMaterial)
+			{
+				PrimitiveComponent->SetMaterial(0, HighlightedMaterial);
+			}
+		}
+	}
 }
 
 FVector UUHBlock::GetBlockLocation() const
@@ -112,16 +136,16 @@ void UUHBlock::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 
 void UUHBlock::UpdateMaterial()
 {
-	if (HighlightablePrimitive)
+	if (PrimitiveComponent)
 	{
 		if (!bSelectedMaterialApplied)
 		{
-			OriginalMaterial = HighlightablePrimitive->GetMaterial(0);
+			OriginalMaterial = PrimitiveComponent->GetMaterial(0);
 		}
 
 		bSelectedMaterialApplied = bHighlighted || bManipulated;
 
-		HighlightablePrimitive->SetMaterial(0, (bSelectedMaterialApplied && HighlightedMaterial) ? HighlightedMaterial : OriginalMaterial);
+		PrimitiveComponent->SetMaterial(0, (bSelectedMaterialApplied && HighlightedMaterial) ? HighlightedMaterial : OriginalMaterial);
 	}
 }
 

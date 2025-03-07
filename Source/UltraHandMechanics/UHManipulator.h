@@ -24,7 +24,7 @@ public:
 	
 	UUHManipulator();
 
-	void StartManipulation(UUHBlock* Block);
+	void StartManipulation(UStaticMeshComponent* InManipulatedPart);
 	void StopManipulation();
 	
 	void MoveRelative(const FVector& Offset);
@@ -48,8 +48,11 @@ private:
 	FQuat SnapRotation(const FQuat& Rotation) const;
 
 	UPROPERTY()
-	UUHBlock* BlockBeingManipulated;
+	UUHBlock* ManipulatedBlock;
 
+	UPROPERTY()
+	UStaticMeshComponent* ManipulatedPart;
+	
 	FVector BlockRelativeLocation;
 	FQuat BlockRelativeCurrentRotation;
 	FQuat BlockRelativeTargetRotation;

@@ -21,7 +21,7 @@ AUHBaseBlock::AUHBaseBlock()
 	AttachableComponent->MovementComponent = MovementComponent;
 
 	BlockComponent = CreateDefaultSubobject<UUHBlock>(TEXT("Block"));
-	BlockComponent->HighlightablePrimitive = MeshComponent;
+	BlockComponent->SetPrimitiveComponent(MeshComponent);
 	BlockComponent->MovementComponent = MovementComponent;
 	BlockComponent->Attachable = AttachableComponent;
 }
@@ -34,6 +34,39 @@ void AUHBaseBlock::SetHighlightedPart(UStaticMeshComponent* Component)
 bool AUHBaseBlock::AnyPartHighlighted() const
 {
 	return BlockComponent->IsHighlighted();
+}
+
+void AUHBaseBlock::Reroot(USceneComponent* NewRoot)
+{
+	if (!ensure(NewRoot))
+	{
+		return;
+	}
+
+	if (!ensure(NewRoot->GetOwner() == this))
+	{
+		return;
+	}
+	
+	USceneComponent* const OldRoot = GetRootComponent();
+	if (OldRoot == NewRoot)
+	{
+		return;
+	}
+	
+	UPrimitiveComponent* const OldRootPrimitive = Cast<UPrimitiveComponent>(OldRoot);
+	UPrimitiveComponent* const NewRootPrimitive = Cast<UPrimitiveComponent>(NewRoot);
+
+	OldRootPrimitive->SetSimulatePhysics(false);
+	NewRoot->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	SetRootComponent(NewRoot);
+	OldRoot->AttachToComponent(NewRoot, FAttachmentTransformRules::KeepWorldTransform);
+
+	OldRootPrimitive->WeldTo(NewRoot);
+
+	MovementComponent->SetUpdatedComponent(NewRoot);
+	
+	BlockComponent->SetPrimitiveComponent(NewRootPrimitive);
 }
 
 void AUHBaseBlock::BeginPlay()

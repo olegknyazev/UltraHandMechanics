@@ -1,6 +1,7 @@
 #include "UHManipulator.h"
 
 #include "UHAttachable.h"
+#include "UHBaseBlock.h"
 #include "UHBlock.h"
 
 UUHManipulator::UUHManipulator()
@@ -8,22 +9,25 @@ UUHManipulator::UUHManipulator()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-void UUHManipulator::StartManipulation(UUHBlock* Block)
+void UUHManipulator::StartManipulation(UStaticMeshComponent* InManipulatedPart)
 {
 	StopManipulation();
-	
-	BlockBeingManipulated = Block;
 
-	if (BlockBeingManipulated)
+	ManipulatedPart = InManipulatedPart;
+	ManipulatedBlock = ManipulatedPart ? ManipulatedPart->GetOwner()->FindComponentByClass<UUHBlock>() : nullptr;
+
+	if (ManipulatedBlock)
 	{
+		Cast<AUHBaseBlock>(ManipulatedBlock->GetOwner())->Reroot(ManipulatedPart);
+		
 		const FTransform OriginTransform = GetOriginTransform();
-		BlockRelativeLocation = OriginTransform.InverseTransformPosition(BlockBeingManipulated->GetBlockLocation());
-		BlockRelativeCurrentRotation = OriginTransform.InverseTransformRotation(BlockBeingManipulated->GetBlockRotation().Quaternion());
+		BlockRelativeLocation = OriginTransform.InverseTransformPosition(ManipulatedBlock->GetBlockLocation());
+		BlockRelativeCurrentRotation = OriginTransform.InverseTransformRotation(ManipulatedBlock->GetBlockRotation().Quaternion());
 		BlockRelativeTargetRotation = SnapRotation(BlockRelativeCurrentRotation);
 
-		BlockBeingManipulated->SetManipulated(true);
+		ManipulatedBlock->SetManipulated(true);
 
-		if (auto* const Attachable = BlockBeingManipulated->GetOwner()->FindComponentByClass<UUHAttachable>())
+		if (auto* const Attachable = ManipulatedBlock->GetOwner()->FindComponentByClass<UUHAttachable>())
 		{
 			Attachable->StartAttaching(MaxAttachDistance);
 		}
@@ -32,22 +36,22 @@ void UUHManipulator::StartManipulation(UUHBlock* Block)
 
 void UUHManipulator::StopManipulation()
 {
-	if (BlockBeingManipulated)
+	if (ManipulatedBlock)
 	{
-		BlockBeingManipulated->SetManipulated(false);
+		ManipulatedBlock->SetManipulated(false);
 		
-		if (auto* const Attachable = BlockBeingManipulated->GetOwner()->FindComponentByClass<UUHAttachable>())
+		if (auto* const Attachable = ManipulatedBlock->GetOwner()->FindComponentByClass<UUHAttachable>())
 		{
 			Attachable->StopAttaching();
 		}
 	}
 	
-	BlockBeingManipulated = nullptr;
+	ManipulatedBlock = nullptr;
 }
 
 void UUHManipulator::MoveRelative(const FVector& Offset)
 {
-	if (BlockBeingManipulated)
+	if (ManipulatedBlock)
 	{
 		BlockRelativeLocation += Offset;
 	}
@@ -55,7 +59,7 @@ void UUHManipulator::MoveRelative(const FVector& Offset)
 
 void UUHManipulator::TurnLeft()
 {
-	if (BlockBeingManipulated)
+	if (ManipulatedBlock)
 	{
 		const FQuat Turn{FVector::ZAxisVector, FMath::DegreesToRadians(SnapDegree * 1.25f)};
 		BlockRelativeTargetRotation = SnapRotation(Turn * BlockRelativeTargetRotation);
@@ -64,7 +68,7 @@ void UUHManipulator::TurnLeft()
 
 void UUHManipulator::TurnRight()
 {
-	if (BlockBeingManipulated)
+	if (ManipulatedBlock)
 	{
 		const FQuat Turn{FVector::ZAxisVector, FMath::DegreesToRadians(-SnapDegree * 1.25f)};
 		BlockRelativeTargetRotation = SnapRotation(Turn * BlockRelativeTargetRotation);
@@ -73,7 +77,7 @@ void UUHManipulator::TurnRight()
 
 void UUHManipulator::TurnUp()
 {
-	if (BlockBeingManipulated)
+	if (ManipulatedBlock)
 	{
 		const FQuat Turn{FVector::YAxisVector, FMath::DegreesToRadians(SnapDegree * 1.25f)};
 		BlockRelativeTargetRotation = SnapRotation(Turn * BlockRelativeTargetRotation);
@@ -82,7 +86,7 @@ void UUHManipulator::TurnUp()
 
 void UUHManipulator::TurnDown()
 {
-	if (BlockBeingManipulated)
+	if (ManipulatedBlock)
 	{
 		const FQuat Turn{FVector::YAxisVector, FMath::DegreesToRadians(-SnapDegree * 1.25f)};
 		BlockRelativeTargetRotation = SnapRotation(Turn * BlockRelativeTargetRotation);
@@ -91,11 +95,11 @@ void UUHManipulator::TurnDown()
 
 bool UUHManipulator::StartSticking()
 {
-	if (BlockBeingManipulated)
+	if (ManipulatedBlock)
 	{
-		if (BlockBeingManipulated->StartSticking())
+		if (ManipulatedBlock->StartSticking())
 		{
-			BlockBeingManipulated = nullptr;
+			ManipulatedBlock = nullptr;
 			return true;
 		}
 	}
@@ -112,14 +116,14 @@ void UUHManipulator::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (BlockBeingManipulated)
+	if (ManipulatedBlock)
 	{
 		BlockRelativeCurrentRotation = FMath::QInterpTo(BlockRelativeCurrentRotation, BlockRelativeTargetRotation, DeltaTime, BlockRotationSpeed);
 
 		const FTransform OriginTransform = GetOriginTransform();
 		const FVector TargetLocation = OriginTransform.TransformPosition(BlockRelativeLocation);
 		const FQuat TargetRotation = OriginTransform.TransformRotation(BlockRelativeCurrentRotation);
-		BlockBeingManipulated->SetTargetPlacement(TargetLocation, TargetRotation.Rotator());
+		ManipulatedBlock->SetTargetPlacement(TargetLocation, TargetRotation.Rotator());
 	}
 }
 

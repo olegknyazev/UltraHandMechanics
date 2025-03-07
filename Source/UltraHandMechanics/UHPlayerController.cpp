@@ -93,17 +93,17 @@ void AUHPlayerController::UltraHandPick()
 	
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{
-		if (auto* const SelectedBlock = Picker->GetSelectedBlock())
+		if (UStaticMeshComponent* const SelectedPart = Picker->GetSelectedPart())
 		{
 			FRotator NewRotation = GetControlRotation();
-			NewRotation.Yaw = (SelectedBlock->GetActorLocation() - GetPawn()->GetActorLocation()).Rotation().Yaw;
+			NewRotation.Yaw = (SelectedPart->GetComponentLocation() - GetPawn()->GetActorLocation()).Rotation().Yaw;
 			SetControlRotation(NewRotation);
 			
-			Manipulator->StartManipulation(SelectedBlock->BlockComponent);
+			Manipulator->StartManipulation(SelectedPart);
 
 			if (auto* const Character = GetUltraHandCharacter())
 			{
-				Character->ActivateUltraHandManipulatingCamera(SelectedBlock->MeshComponent);
+				Character->ActivateUltraHandManipulatingCamera(SelectedPart);
 			}
 	
 			if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))

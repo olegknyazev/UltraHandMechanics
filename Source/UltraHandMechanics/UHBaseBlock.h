@@ -31,6 +31,8 @@ public:
 	void SetHighlightedPart(UStaticMeshComponent* Component);
 	bool AnyPartHighlighted() const;
 
+	void Reroot(USceneComponent* NewRoot);
+
 	virtual void Tick(float DeltaTime) override;
 
 protected:

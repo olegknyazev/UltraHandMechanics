@@ -18,9 +18,6 @@ public:
 	UMaterialInterface* HighlightedMaterial;
 
 	UPROPERTY()
-	UPrimitiveComponent* HighlightablePrimitive;
-
-	UPROPERTY()
 	UUHBlockMovementComponent* MovementComponent;
 
 	UPROPERTY()
@@ -30,6 +27,9 @@ public:
 	float TargetApproachTime;
 	
 	UUHBlock();
+
+	UPrimitiveComponent* GetPrimitiveComponent() const;
+	void SetPrimitiveComponent(UPrimitiveComponent* InPrimitiveComponent);
 
 	bool IsHighlighted() const;
 	void SetHighlighted(bool bInHighlighted);
@@ -51,9 +51,10 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
-	UPrimitiveComponent* GetPrimitiveComponent() const;
-
 	void UpdateMaterial();
+	
+	UPROPERTY()
+	UPrimitiveComponent* PrimitiveComponent;
 	
 	UPROPERTY()
 	UMaterialInterface* OriginalMaterial;
