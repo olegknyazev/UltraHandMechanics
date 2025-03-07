@@ -8,6 +8,7 @@
 class UPhysicsConstraintComponent;
 class UUHBlockMovementComponent;
 
+
 USTRUCT()
 struct ULTRAHANDMECHANICS_API FUHAttachmentSocket
 {
@@ -15,6 +16,22 @@ struct ULTRAHANDMECHANICS_API FUHAttachmentSocket
 	
 	UPROPERTY(EditAnywhere)
 	FVector Location;
+};
+
+
+USTRUCT()
+struct ULTRAHANDMECHANICS_API FUHAttachmentPart
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	UPrimitiveComponent* PrimitiveComponent;
+
+	UPROPERTY()
+	TArray<FUHAttachmentSocket> Sockets;
+
+	UPROPERTY()
+	TArray<uint32> ConnectedPartIndices;
 };
 
 
@@ -65,13 +82,32 @@ private:
 	void StopSticking();
 
 	void Attach(UUHAttachable* Other);
+	uint32 Attach(
+		UUHAttachable* Other,
+		const FUHAttachmentPart* OtherPart,
+		TSet<const FUHAttachmentPart*>& AttachedParts,
+		uint32 OurParentPartIndex);
+	
+	void SetSimulatePhysics(bool bSimulationEnabled);
 	
 	bool bAttachInProgress;
 	bool bStickInProgress;
 	float MaxAttachDistance;
 
 	UPROPERTY()
+	TArray<FUHAttachmentPart> Parts;
+
+	UPROPERTY()
 	UUHAttachable* CurrentTarget;
+
+	UPROPERTY()
+	UPrimitiveComponent* CurrentOurPrimitive;
+	
+	UPROPERTY()
+	UPrimitiveComponent* CurrentTheirPrimitive;
+	
+	int32 CurrentTheirPartIndex;
+	int32 CurrentOurPartIndex;
 	int32 CurrentTheirSocketIndex;
 	int32 CurrentOurSocketIndex;
 	float CurrentDistance;

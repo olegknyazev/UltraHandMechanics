@@ -1,8 +1,8 @@
 #include "UHAttachable.h"
 
+#include "UHBaseBlock.h"
 #include "UHBlockMovementComponent.h"
 #include "Engine/OverlapResult.h"
-#include "PhysicsEngine/PhysicsConstraintComponent.h"
 
 
 UUHAttachable::UUHAttachable()
@@ -12,7 +12,7 @@ UUHAttachable::UUHAttachable()
 
 void UUHAttachable::StartAttaching(float InMaxAttachDistance)
 {
-	if (AttachablePrimitive && !Sockets.IsEmpty())
+	if (!Parts.IsEmpty())
 	{
 		bAttachInProgress = true;
 		MaxAttachDistance = InMaxAttachDistance;
@@ -29,14 +29,21 @@ bool UUHAttachable::StartSticking()
 {
 	if (bAttachInProgress && CurrentTarget && CurrentDistance < MaxAttachDistance && MovementComponent)
 	{
+		ensure(CurrentTheirPrimitive);
+		ensure(CurrentOurPrimitive);
+
+		auto* OurBlock = Cast<AUHBaseBlock>(CurrentOurPrimitive->GetOwner());
+		OurBlock->Reroot(CurrentOurPrimitive);
+		
 		bAttachInProgress = false;
 		bStickInProgress = true;
-		OurTargetRotation = SnappedRelativeRotation(AttachablePrimitive, CurrentTarget->AttachablePrimitive);
-		TheirTargetRotation = SnappedRelativeRotation(CurrentTarget->AttachablePrimitive, AttachablePrimitive);
-		AttachablePrimitive->SetSimulatePhysics(false);
-		CurrentTarget->AttachablePrimitive->SetSimulatePhysics(false);
+		OurTargetRotation = SnappedRelativeRotation(CurrentOurPrimitive, CurrentTheirPrimitive);
+		TheirTargetRotation = SnappedRelativeRotation(CurrentTheirPrimitive, CurrentOurPrimitive);
+		SetSimulatePhysics(false);
+		CurrentTarget->SetSimulatePhysics(false);
 		RemainingDistance = -1.f;
 		RemainingAngle = -1.f;
+		
 		return true;
 	}
 	
@@ -46,17 +53,26 @@ bool UUHAttachable::StartSticking()
 void UUHAttachable::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (AttachablePrimitive && !Sockets.IsEmpty())
+	{
+		Parts.Emplace(AttachablePrimitive, Sockets);
+	}
 }
 
 void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	for (const FUHAttachmentSocket& Socket : Sockets)
+	for (const FUHAttachmentPart& Part : Parts)
 	{
-		const FVector Location = GetOwner()->GetActorTransform().TransformPosition(Socket.Location);
-		const FRotator Rotation = GetOwner()->GetActorRotation();
-		DrawDebugBox(GetWorld(), Location, FVector(3.f), Rotation.Quaternion(), FColor::Red);
+		const FTransform& Transform = Part.PrimitiveComponent->GetComponentTransform();
+		for (const FUHAttachmentSocket& Socket : Part.Sockets)
+		{
+			const FVector Location = Transform.TransformPosition(Socket.Location);
+			const FRotator Rotation = Part.PrimitiveComponent->GetComponentRotation();
+			DrawDebugBox(GetWorld(), Location, FVector(3.f), Rotation.Quaternion(), FColor::Red);
+		}
 	}
 
 	if (bAttachInProgress)
@@ -65,8 +81,8 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 
 		if (CurrentTarget != nullptr)
 		{
-			const FVector OurSocketLocation = AttachablePrimitive->GetComponentTransform().TransformPosition(Sockets[CurrentOurSocketIndex].Location);
-			const FVector TheirSocketLocation = CurrentTarget->AttachablePrimitive->GetComponentTransform().TransformPosition(CurrentTarget->Sockets[CurrentTheirSocketIndex].Location);
+			const FVector OurSocketLocation = CurrentOurPrimitive->GetComponentTransform().TransformPosition(Parts[CurrentOurPartIndex].Sockets[CurrentOurSocketIndex].Location);
+			const FVector TheirSocketLocation = CurrentTheirPrimitive->GetComponentTransform().TransformPosition(CurrentTarget->Parts[CurrentTheirPartIndex].Sockets[CurrentTheirSocketIndex].Location);
 			DrawDebugLine(
 				GetWorld(),
 				OurSocketLocation,
@@ -77,18 +93,18 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 
 	if (bStickInProgress)
 	{
-		const FVector OurSocketLocation = AttachablePrimitive->GetComponentTransform().TransformPosition(Sockets[CurrentOurSocketIndex].Location);
-		const FVector TheirSocketLocation = CurrentTarget->AttachablePrimitive->GetComponentTransform().TransformPosition(CurrentTarget->Sockets[CurrentTheirSocketIndex].Location);
+		const FVector OurSocketLocation = CurrentOurPrimitive->GetComponentTransform().TransformPosition(Parts[CurrentOurPartIndex].Sockets[CurrentOurSocketIndex].Location);
+		const FVector TheirSocketLocation = CurrentTheirPrimitive->GetComponentTransform().TransformPosition(CurrentTarget->Parts[CurrentTheirPartIndex].Sockets[CurrentTheirSocketIndex].Location);
 		DrawDebugLine(
 			GetWorld(),
 			OurSocketLocation,
 			TheirSocketLocation,
 			FColor::Red);
 
-		const FRotator OurDelta = (OurTargetRotationInWorldSpace() - AttachablePrimitive->GetComponentRotation()).GetNormalized();
+		const FRotator OurDelta = (OurTargetRotationInWorldSpace() - CurrentOurPrimitive->GetComponentRotation()).GetNormalized();
 		MovementComponent->AngularVelocity = OurDelta * RotationSpeed;
 		
-		const FRotator TheirDelta = (TheirTargetRotationInWorldSpace() - CurrentTarget->AttachablePrimitive->GetComponentRotation()).GetNormalized();
+		const FRotator TheirDelta = (TheirTargetRotationInWorldSpace() - CurrentTheirPrimitive->GetComponentRotation()).GetNormalized();
 		CurrentTarget->MovementComponent->AngularVelocity = TheirDelta * RotationSpeed;
 
 		MovementComponent->Velocity = (TheirSocketLocation - OurSocketLocation) * MovementSpeed;
@@ -128,57 +144,76 @@ FRotator UUHAttachable::SnappedRelativeRotation(USceneComponent* Component, USce
 
 FRotator UUHAttachable::OurTargetRotationInWorldSpace() const
 {
-	return CurrentTarget->AttachablePrimitive->GetComponentTransform().TransformRotation(OurTargetRotation.Quaternion()).Rotator();
+	return CurrentTheirPrimitive->GetComponentTransform().TransformRotation(OurTargetRotation.Quaternion()).Rotator();
 }
 
 FRotator UUHAttachable::TheirTargetRotationInWorldSpace() const
 {
-	return AttachablePrimitive->GetComponentTransform().TransformRotation(TheirTargetRotation.Quaternion()).Rotator();
+	return CurrentOurPrimitive->GetComponentTransform().TransformRotation(TheirTargetRotation.Quaternion()).Rotator();
 }
 
 void UUHAttachable::UpdateCurrentTarget()
 {
-	const FTransform& AttachableTransform = AttachablePrimitive->GetComponentTransform(); 
-
-	const FCollisionShape InflatedShape = AttachablePrimitive->GetCollisionShape(MaxAttachDistance);
 	FCollisionQueryParams QueryParams;
 	QueryParams.bTraceComplex = false;
 	QueryParams.AddIgnoredActor(GetOwner());
-	TArray<FOverlapResult> Overlaps;
-	GetWorld()->OverlapMultiByChannel(
-		Overlaps,
-		AttachablePrimitive->GetComponentLocation(),
-		AttachablePrimitive->GetComponentRotation().Quaternion(),
-		ECC_Visibility,
-		InflatedShape,
-		QueryParams);
 	
+	TArray<FOverlapResult> Overlaps;
+	TArray<FOverlapResult> OverlapsLocal;
+	for (const FUHAttachmentPart& Part : Parts)
+	{
+		const FCollisionShape InflatedShape = Part.PrimitiveComponent->GetCollisionShape(MaxAttachDistance);
+		OverlapsLocal.Reset();
+		GetWorld()->OverlapMultiByChannel(
+			OverlapsLocal,
+			Part.PrimitiveComponent->GetComponentLocation(),
+			Part.PrimitiveComponent->GetComponentRotation().Quaternion(),
+			ECC_Visibility,
+			InflatedShape,
+			QueryParams);
+		Overlaps.Append(OverlapsLocal);
+	}
+
+	CurrentOurPrimitive = nullptr;
+	CurrentTheirPrimitive = nullptr;
 	CurrentOurSocketIndex = -1;
 	CurrentTheirSocketIndex = -1;
 	CurrentTarget = nullptr;
 	CurrentDistance = std::numeric_limits<float>::max();
-		
+
 	for (const FOverlapResult& Overlap : Overlaps)
 	{
 		if (auto* const OtherAttachable = Overlap.GetActor()->FindComponentByClass<UUHAttachable>())
 		{
-			for (int32 TI = 0; TI < OtherAttachable->Sockets.Num(); ++TI)
+			for (int32 TPI = 0; TPI < OtherAttachable->Parts.Num(); ++TPI)
 			{
-				const FUHAttachmentSocket& TheirSocket = OtherAttachable->Sockets[TI];
-				const FVector TheirSocketLocation = OtherAttachable->AttachablePrimitive->GetComponentTransform().TransformPosition(TheirSocket.Location);
-					
-				for (int32 OI = 0; OI < Sockets.Num(); ++OI)
+				const FUHAttachmentPart& TheirPart = OtherAttachable->Parts[TPI];
+				for (int32 TSI = 0; TSI < OtherAttachable->Parts[TPI].Sockets.Num(); ++TSI)
 				{
-					const FUHAttachmentSocket& OurSocket = Sockets[OI];
-					const FVector OurSocketLocation = AttachableTransform.TransformPosition(OurSocket.Location);
-					const float Distance = FVector::Distance(TheirSocketLocation, OurSocketLocation);
+					const FUHAttachmentSocket& TheirSocket = TheirPart.Sockets[TSI];
+					const FVector TheirSocketLocation = TheirPart.PrimitiveComponent->GetComponentTransform().TransformPosition(TheirSocket.Location);
 
-					if (Distance < CurrentDistance)
+					for (int32 OPI = 0; OPI < Parts.Num(); ++OPI)
 					{
-						CurrentDistance = Distance;
-						CurrentOurSocketIndex = OI;
-						CurrentTheirSocketIndex = TI;
-						CurrentTarget = OtherAttachable;
+						const FUHAttachmentPart& OurPart = Parts[OPI];
+						for (int32 OSI = 0; OSI < Parts[OPI].Sockets.Num(); ++OSI)
+						{
+							const FUHAttachmentSocket& OurSocket = OurPart.Sockets[OSI];
+							const FVector OurSocketLocation = OurPart.PrimitiveComponent->GetComponentTransform().TransformPosition(OurSocket.Location);
+							const float Distance = FVector::Distance(TheirSocketLocation, OurSocketLocation);
+
+							if (Distance < CurrentDistance)
+							{
+								CurrentDistance = Distance;
+								CurrentOurPrimitive = OurPart.PrimitiveComponent;
+								CurrentTheirPrimitive = TheirPart.PrimitiveComponent;
+								CurrentOurPartIndex = OPI;
+								CurrentTheirPartIndex = TPI;
+								CurrentOurSocketIndex = OSI;
+								CurrentTheirSocketIndex = TSI;
+								CurrentTarget = OtherAttachable;
+							}
+						}
 					}
 				}
 			}
@@ -192,10 +227,14 @@ void UUHAttachable::StopSticking()
 	{
 		MovementComponent->StopMovementImmediately();
 		CurrentTarget->MovementComponent->StopMovementImmediately();
-			
-		AttachablePrimitive->SetSimulatePhysics(true);
-		CurrentTarget->AttachablePrimitive->SetSimulatePhysics(true);
-			
+
+		SetSimulatePhysics(true);
+		CurrentTarget->SetSimulatePhysics(true);
+
+		CurrentOurPrimitive = nullptr;
+		CurrentTheirPrimitive = nullptr;
+		CurrentOurPartIndex = -1;
+		CurrentTheirPartIndex = -1;
 		CurrentOurSocketIndex = -1;
 		CurrentTheirSocketIndex = -1;
 		CurrentTarget = nullptr;
@@ -209,17 +248,24 @@ void UUHAttachable::StopSticking()
 
 void UUHAttachable::Attach(UUHAttachable* Other)
 {
-	auto* OtherMeshComponent = Cast<UStaticMeshComponent>(Other->AttachablePrimitive);
-	
-	auto* NewMeshComponent = NewObject<UStaticMeshComponent>(GetOwner());
-	NewMeshComponent->SetupAttachment(AttachablePrimitive);
-	NewMeshComponent->SetWorldLocation(OtherMeshComponent->GetComponentLocation());
-	NewMeshComponent->SetWorldRotation(OtherMeshComponent->GetComponentRotation());
-	NewMeshComponent->SetStaticMesh(OtherMeshComponent->GetStaticMesh());
-	NewMeshComponent->SetMaterial(0, OtherMeshComponent->GetMaterial(0));
-	NewMeshComponent->RegisterComponent();
-	NewMeshComponent->WeldTo(AttachablePrimitive);
+	if (!ensure(CurrentOurPrimitive == GetOwner()->GetRootComponent()))
+	{
+		return;
+	}
 
+	const FUHAttachmentPart* OtherStartPart = Other->Parts.FindByPredicate([this](const FUHAttachmentPart& P)
+	{
+		return P.PrimitiveComponent == CurrentTheirPrimitive;
+	});
+
+	if (!ensure(OtherStartPart))
+	{
+		return;
+	}
+
+	TSet<const FUHAttachmentPart*> AttachedParts;
+	Attach(Other, OtherStartPart, AttachedParts, CurrentOurPartIndex);
+	
 	Other->GetOwner()->Destroy();
 
 	// Need to:
@@ -232,4 +278,46 @@ void UUHAttachable::Attach(UUHAttachable* Other)
 	//  - it breaks all the attachments
 	//  - when detaching a block, it should get its own actor
 	//  - all the attachments of the detached blocks should remain
+}
+
+uint32 UUHAttachable::Attach(
+	UUHAttachable* Other,
+	const FUHAttachmentPart* OtherPart,
+	TSet<const FUHAttachmentPart*>& AttachedParts,
+	uint32 OurParentPartIndex)
+{
+	auto* AttachParent = Parts[OurParentPartIndex].PrimitiveComponent;
+	auto* OtherMeshComponent = Cast<UStaticMeshComponent>(OtherPart->PrimitiveComponent);
+	
+	auto* NewMeshComponent = NewObject<UStaticMeshComponent>(GetOwner());
+	NewMeshComponent->SetupAttachment(AttachParent);
+	NewMeshComponent->SetWorldLocation(OtherMeshComponent->GetComponentLocation());
+	NewMeshComponent->SetWorldRotation(OtherMeshComponent->GetComponentRotation());
+	NewMeshComponent->SetStaticMesh(OtherMeshComponent->GetStaticMesh());
+	NewMeshComponent->SetMaterial(0, OtherMeshComponent->GetMaterial(0));
+	NewMeshComponent->RegisterComponent();
+	NewMeshComponent->WeldTo(AttachParent);
+
+	AttachedParts.Add(OtherPart);
+
+	const uint32 AddedPartIndex = Parts.Emplace(NewMeshComponent, OtherPart->Sockets, TArray<uint32>());
+	
+	Parts[AddedPartIndex].ConnectedPartIndices.Add(OurParentPartIndex);
+	Parts[OurParentPartIndex].ConnectedPartIndices.Add(AddedPartIndex);
+	
+	for (const int32 Index : OtherPart->ConnectedPartIndices)
+	{
+		auto* const OtherChildPart = &Other->Parts[Index];
+		if (!AttachedParts.Contains(OtherChildPart))
+		{
+			Attach(Other, OtherChildPart, AttachedParts, AddedPartIndex);
+		}
+	}
+
+	return AddedPartIndex;
+}
+
+void UUHAttachable::SetSimulatePhysics(bool bSimulationEnabled)
+{
+	Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent())->SetSimulatePhysics(bSimulationEnabled); 
 }
