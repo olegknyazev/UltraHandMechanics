@@ -16,7 +16,7 @@ class ULTRAHANDMECHANICS_API AUHPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
-	UPROPERTY()
+	UPROPERTY(EditAnywhere)
 	UUHPicker* Picker;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)

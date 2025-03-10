@@ -88,11 +88,23 @@ UStaticMeshComponent* UUHPicker::TraceMeshUnderAim() const
 		return nullptr;
 	}
 
+	const APawn* Pawn = PlayerController->GetPawn();
+	if (!Pawn)
+	{
+		return nullptr;
+	}
+
 	int32 ViewportWidth, ViewportHeight;
 	PlayerController->GetViewportSize(ViewportWidth, ViewportHeight);
 
 	FHitResult Hit;
 	if (!PlayerController->GetHitResultAtScreenPosition(FVector2D(ViewportWidth / 2, ViewportHeight / 2), ECC_Visibility, false, Hit))
+	{
+		return nullptr;
+	}
+
+	const float DistanceToPlayer = FVector::Distance(Pawn->GetActorLocation(), Hit.Location);
+	if (DistanceToPlayer > MaxDistanceToPlayer)
 	{
 		return nullptr;
 	}

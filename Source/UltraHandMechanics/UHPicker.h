@@ -14,6 +14,9 @@ class ULTRAHANDMECHANICS_API UUHPicker : public UActorComponent
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere)
+	float MaxDistanceToPlayer;
+	
 	UUHPicker();
 
 	AUHBaseBlock* GetSelectedBlock() const;
