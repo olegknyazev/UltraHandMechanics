@@ -42,6 +42,7 @@ void AUHPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(UltraHandTurnUpAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandTurnUp);
 		EnhancedInputComponent->BindAction(UltraHandTurnDownAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandTurnDown);
 		EnhancedInputComponent->BindAction(UltraHandAttachAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandAttach);
+		EnhancedInputComponent->BindAction(UltraHandDetachAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandDetach);
 	}
 	
 	if (auto* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
@@ -261,6 +262,18 @@ void AUHPlayerController::UltraHandAttach()
 		{
 			UltraHandStop();
 		}
+	}
+}
+
+void AUHPlayerController::UltraHandDetach()
+{
+	UE_LOG(LogTemp, Display, TEXT("UltraHandDetach"));
+
+	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	{
+		Manipulator->Detach();
+		
+		UltraHandStop();
 	}
 }
 

@@ -107,6 +107,19 @@ bool UUHManipulator::StartSticking()
 	return false;
 }
 
+void UUHManipulator::Detach()
+{
+	if (ManipulatedBlock)
+	{
+		if (auto* const Attachable = ManipulatedBlock->GetOwner()->FindComponentByClass<UUHAttachable>())
+		{
+			Attachable->Detach(ManipulatedPart);
+		}
+
+		ManipulatedBlock->SetManipulated(false);
+	}
+}
+
 void UUHManipulator::BeginPlay()
 {
 	Super::BeginPlay();

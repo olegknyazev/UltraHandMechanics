@@ -50,6 +50,92 @@ bool UUHAttachable::StartSticking()
 	return false;
 }
 
+void UUHAttachable::Detach(USceneComponent* PartToDetach)
+{
+	if (!ensure(PartToDetach == GetOwner()->GetRootComponent()))
+	{
+		return;
+	}
+	
+	const FUHAttachmentPart* Part = Parts.FindByPredicate([PartToDetach](const FUHAttachmentPart& P)
+	{
+		return P.PrimitiveComponent == PartToDetach;
+	});
+
+	if (!ensure(Part))
+	{
+		return;
+	}
+
+	for (const uint32 Index : Part->ConnectedPartIndices)
+	{
+		const FUHAttachmentPart& AttachedPart = Parts[Index];
+		const UStaticMeshComponent* DetachedMesh = Cast<UStaticMeshComponent>(AttachedPart.PrimitiveComponent);
+
+		auto* Actor = GetWorld()->SpawnActor<AUHBaseBlock>(
+			GetOwner()->GetClass(),
+			AttachedPart.PrimitiveComponent->GetComponentLocation(),
+			AttachedPart.PrimitiveComponent->GetComponentRotation());
+
+		Actor->MeshComponent->SetStaticMesh(DetachedMesh->GetStaticMesh());
+		Actor->MeshComponent->SetMaterial(0, DetachedMesh->GetMaterial(0));
+
+		TSet<uint32> VisitedIndices;
+		VisitedIndices.Add(Part - Parts.GetData());
+
+		ensure(Actor->AttachableComponent->Parts.Num() == 1);
+		ensure(Actor->AttachableComponent->Parts[0].PrimitiveComponent == Actor->MeshComponent);
+		Actor->AttachableComponent->CopyPartsFrom(this, Index, 0, VisitedIndices);
+	}
+
+	for (const FUHAttachmentPart& P : Parts)
+	{
+		if (P.PrimitiveComponent != PartToDetach)
+		{
+			P.PrimitiveComponent->DestroyComponent();
+		}
+	}
+
+	Parts.RemoveAll([PartToDetach](const FUHAttachmentPart& P) { return P.PrimitiveComponent != PartToDetach; });
+
+	ensure(Parts.Num() == 1);
+	Parts[0].ConnectedPartIndices.Reset();
+}
+
+void UUHAttachable::CopyPartsFrom(
+	const UUHAttachable* Other,
+	uint32 OtherParentPartIndex,
+	uint32 OurParentPartIndex,
+	TSet<uint32>& CopiedParts)
+{
+	const FUHAttachmentPart& OurParentPart = Parts[OurParentPartIndex];
+	const FUHAttachmentPart& OtherParentPart = Other->Parts[OtherParentPartIndex];
+	for (const uint32 OtherIndex : OtherParentPart.ConnectedPartIndices)
+	{
+		bool bAlreadyCopied = false;
+		CopiedParts.Add(OtherIndex, &bAlreadyCopied);
+		if (!bAlreadyCopied)
+		{
+			const FUHAttachmentPart& OtherPart = Other->Parts[OtherIndex];
+			const auto* OtherMeshComponent = Cast<UStaticMeshComponent>(OtherPart.PrimitiveComponent);
+			auto* NewMeshComponent = NewObject<UStaticMeshComponent>(GetOwner());
+			NewMeshComponent->SetupAttachment(OurParentPart.PrimitiveComponent);
+			NewMeshComponent->SetWorldLocation(OtherMeshComponent->GetComponentLocation());
+			NewMeshComponent->SetWorldRotation(OtherMeshComponent->GetComponentRotation());
+			NewMeshComponent->SetStaticMesh(OtherMeshComponent->GetStaticMesh());
+			NewMeshComponent->SetMaterial(0, OtherMeshComponent->GetMaterial(0));
+			NewMeshComponent->RegisterComponent();
+			NewMeshComponent->WeldTo(OurParentPart.PrimitiveComponent);
+
+			const uint32 AddedIndex = Parts.Emplace(NewMeshComponent, OtherPart.Sockets);
+			Parts[AddedIndex].ConnectedPartIndices.Add(OurParentPartIndex);
+			Parts[OurParentPartIndex].ConnectedPartIndices.Add(AddedIndex);
+			
+			CopyPartsFrom(Other, OtherIndex, AddedIndex, CopiedParts);
+		}
+	}
+}
+
 void UUHAttachable::BeginPlay()
 {
 	Super::BeginPlay();

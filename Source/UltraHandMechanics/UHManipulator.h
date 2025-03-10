@@ -36,6 +36,8 @@ public:
 
 	bool StartSticking();
 
+	void Detach();
+
 protected:
 	virtual void BeginPlay() override;
 

@@ -62,6 +62,8 @@ public:
 	void StopAttaching();
 
 	bool StartSticking();
+
+	void Detach(USceneComponent* PartToDetach);
 	
 protected:
 	virtual void BeginPlay() override;
@@ -89,6 +91,12 @@ private:
 		uint32 OurParentPartIndex);
 	
 	void SetSimulatePhysics(bool bSimulationEnabled);
+
+	void CopyPartsFrom(
+		const UUHAttachable* Other,
+		uint32 OtherParentPartIndex,
+		uint32 OurParentPartIndex,
+		TSet<uint32>& CopiedParts);
 	
 	bool bAttachInProgress;
 	bool bStickInProgress;

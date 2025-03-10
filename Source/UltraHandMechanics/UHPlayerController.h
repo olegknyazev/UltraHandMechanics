@@ -76,6 +76,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* UltraHandAttachAction;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* UltraHandDetachAction;
+	
 	AUHPlayerController();
 	
 	virtual void Tick(float DeltaSeconds) override;
@@ -100,6 +103,7 @@ private:
 	void UltraHandTurnUp();
 	void UltraHandTurnDown();
 	void UltraHandAttach();
+	void UltraHandDetach();
 
 	AUHCharacter* GetUltraHandCharacter() const;
 };
