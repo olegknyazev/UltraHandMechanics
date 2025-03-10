@@ -83,10 +83,8 @@ public:
 	void ActivateUltraHandPickingMode();
 	void ActivateUltraHandManipulatingMode(USceneComponent* InManipulatedComponent);
 
-protected:
 	virtual void BeginPlay() override;
-
-public:
+	
 	virtual void TickComponent(
 		float DeltaTime,
 		ELevelTick TickType,

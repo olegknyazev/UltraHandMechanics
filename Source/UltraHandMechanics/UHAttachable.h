@@ -64,16 +64,14 @@ public:
 	bool StartSticking();
 
 	void Detach(USceneComponent* PartToDetach);
-	
-protected:
-	virtual void BeginPlay() override;
 
-public:
+	virtual void BeginPlay() override;
+	
 	virtual void TickComponent(
 		float DeltaTime,
 		ELevelTick TickType,
 		FActorComponentTickFunction* ThisTickFunction) override;
-
+	
 private:
 	static FRotator SnappedRelativeRotation(USceneComponent* Component, USceneComponent* Space);
 

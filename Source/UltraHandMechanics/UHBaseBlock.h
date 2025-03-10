@@ -33,8 +33,7 @@ public:
 
 	void Reroot(USceneComponent* NewRoot);
 
-	virtual void Tick(float DeltaTime) override;
-
-protected:
 	virtual void BeginPlay() override;
+
+	virtual void Tick(float DeltaTime) override;
 };

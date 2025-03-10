@@ -25,10 +25,8 @@ public:
 	void SetPickingEnabled(bool bInEnabled);
 	bool IsPickingEnabled() const;
 	
-protected:
 	virtual void BeginPlay() override;
 
-public:
 	virtual void TickComponent(
 		float DeltaTime,
 		ELevelTick TickType,
