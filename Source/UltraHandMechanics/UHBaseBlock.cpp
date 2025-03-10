@@ -28,6 +28,11 @@ AUHBaseBlock::AUHBaseBlock()
 
 void AUHBaseBlock::SetHighlightedPart(UStaticMeshComponent* Component)
 {
+	if (Component)
+	{
+		ensure(Component->GetOwner() == this);
+		BlockComponent->SetPrimitiveComponent(Component);
+	}
 	BlockComponent->SetHighlighted(Component != nullptr);
 }
 

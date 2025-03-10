@@ -44,7 +44,7 @@ void UUHBlock::SetManipulated(bool bInManipulated)
 			MovementComponent->StopMovementImmediately();
 		}
 
-		GetPrimitiveComponent()->SetSimulatePhysics(!bManipulated);
+		PrimitiveComponent->SetSimulatePhysics(!bManipulated);
 	}
 }
 
@@ -78,12 +78,12 @@ void UUHBlock::SetPrimitiveComponent(UPrimitiveComponent* InPrimitiveComponent)
 
 FVector UUHBlock::GetBlockLocation() const
 {
-	return GetPrimitiveComponent()->GetComponentLocation();
+	return PrimitiveComponent->GetComponentLocation();
 }
 
 FRotator UUHBlock::GetBlockRotation() const
 {
-	return GetPrimitiveComponent()->GetComponentRotation();
+	return PrimitiveComponent->GetComponentRotation();
 }
 
 void UUHBlock::SetTargetPlacement(const FVector& Location, const FRotator& Rotation)
