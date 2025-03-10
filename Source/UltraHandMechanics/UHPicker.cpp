@@ -51,6 +51,8 @@ void UUHPicker::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 void UUHPicker::SetSelectedPart(UStaticMeshComponent* Part)
 {
 	auto* const Block = Part ? Cast<AUHBaseBlock>(Part->GetOwner()) : nullptr;
+	auto* const PartToSelect = Block ? Part : nullptr;
+	
 	bool bBlockChanged = false;
 	if (SelectedBlock != Block)
 	{
@@ -63,14 +65,14 @@ void UUHPicker::SetSelectedPart(UStaticMeshComponent* Part)
 		bBlockChanged = true;
 	}
 
-	if (bBlockChanged || SelectedMesh != Part)
+	if (bBlockChanged || SelectedMesh != PartToSelect)
 	{
 		if (SelectedBlock)
 		{
-			SelectedBlock->SetHighlightedPart(Part);
+			SelectedBlock->SetHighlightedPart(PartToSelect);
 		}
 		
-		SelectedMesh = Part;
+		SelectedMesh = PartToSelect;
 
 		UE_LOG(LogTemp, Display, TEXT("SelectedBlock is now %s (%s)"),
         	SelectedBlock ? *SelectedBlock->GetName() : TEXT("None"),
