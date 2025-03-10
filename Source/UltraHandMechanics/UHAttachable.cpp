@@ -2,6 +2,7 @@
 
 #include "UHBaseBlock.h"
 #include "UHBlockMovementComponent.h"
+#include "UHDebugDrawFunctions.h"
 #include "Engine/OverlapResult.h"
 
 
@@ -249,11 +250,14 @@ void UUHAttachable::UpdateCurrentTarget()
 	for (const FUHAttachmentPart& Part : Parts)
 	{
 		const FCollisionShape InflatedShape = Part.PrimitiveComponent->GetCollisionShape(MaxAttachDistance);
+		const FVector ShapeLocation = Part.PrimitiveComponent->GetComponentLocation();
+		const FQuat ShapeRotation = Part.PrimitiveComponent->GetComponentRotation().Quaternion();
+		DrawDebugCollisionShape(GetWorld(), InflatedShape, ShapeLocation, ShapeRotation, FColor::Orange);
 		OverlapsLocal.Reset();
 		GetWorld()->OverlapMultiByChannel(
 			OverlapsLocal,
-			Part.PrimitiveComponent->GetComponentLocation(),
-			Part.PrimitiveComponent->GetComponentRotation().Quaternion(),
+			ShapeLocation,
+			ShapeRotation,
 			ECC_Visibility,
 			InflatedShape,
 			QueryParams);
@@ -353,17 +357,6 @@ void UUHAttachable::Attach(UUHAttachable* Other)
 	Attach(Other, OtherStartPart, AttachedParts, CurrentOurPartIndex);
 	
 	Other->GetOwner()->Destroy();
-
-	// Need to:
-	//  - highlight the mesh we're looking at
-	//  - the selected mesh should be the center of manipulation
-	//  - consider the sockets of the attached blocks as well
-	//  - be able to join composites
-
-	// Also we need to be able to DETACH attached mesh:
-	//  - it breaks all the attachments
-	//  - when detaching a block, it should get its own actor
-	//  - all the attachments of the detached blocks should remain
 }
 
 uint32 UUHAttachable::Attach(
