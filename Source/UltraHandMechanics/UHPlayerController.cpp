@@ -101,6 +101,8 @@ void AUHPlayerController::UltraHandPick()
 			SetControlRotation(NewRotation);
 			
 			Manipulator->StartManipulation(SelectedPart);
+			
+			Picker->SetPickingEnabled(false);
 
 			if (auto* const Character = GetUltraHandCharacter())
 			{
