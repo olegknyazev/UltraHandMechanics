@@ -21,6 +21,12 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	float MaxAttachDistance;
+
+	UPROPERTY(EditAnywhere)
+	float MaxHorizontalOffset;
+
+	UPROPERTY(EditAnywhere)
+	float MaxVerticalOffset;
 	
 	UUHManipulator();
 
@@ -48,6 +54,8 @@ private:
 	FTransform GetOriginTransform() const;
 	FRotator SnapRotation(const FRotator& Rotation) const;
 	FQuat SnapRotation(const FQuat& Rotation) const;
+
+	FVector ClampOffset(const FVector& Offset) const;
 
 	UPROPERTY()
 	UUHBlock* ManipulatedBlock;

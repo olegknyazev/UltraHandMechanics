@@ -21,7 +21,7 @@ void UUHManipulator::StartManipulation(UStaticMeshComponent* InManipulatedPart)
 		Cast<AUHBaseBlock>(ManipulatedBlock->GetOwner())->Reroot(ManipulatedPart);
 		
 		const FTransform OriginTransform = GetOriginTransform();
-		BlockRelativeLocation = OriginTransform.InverseTransformPosition(ManipulatedBlock->GetBlockLocation());
+		BlockRelativeLocation = ClampOffset(OriginTransform.InverseTransformPosition(ManipulatedBlock->GetBlockLocation()));
 		BlockRelativeCurrentRotation = OriginTransform.InverseTransformRotation(ManipulatedBlock->GetBlockRotation().Quaternion());
 		BlockRelativeTargetRotation = SnapRotation(BlockRelativeCurrentRotation);
 
@@ -53,7 +53,7 @@ void UUHManipulator::MoveRelative(const FVector& Offset)
 {
 	if (ManipulatedBlock)
 	{
-		BlockRelativeLocation += Offset;
+		BlockRelativeLocation = ClampOffset(BlockRelativeLocation + Offset);
 	}
 }
 
@@ -161,4 +161,11 @@ FRotator UUHManipulator::SnapRotation(const FRotator& Rotation) const
 FQuat UUHManipulator::SnapRotation(const FQuat& Rotation) const
 {
 	return SnapRotation(Rotation.Rotator()).Quaternion();
+}
+
+FVector UUHManipulator::ClampOffset(const FVector& Offset) const
+{
+	FVector Clamped = Offset.GetClampedToMaxSize2D(MaxHorizontalOffset);
+	Clamped.Z = FMath::Clamp(Clamped.Z, -MaxVerticalOffset, +MaxVerticalOffset);
+	return Clamped;
 }
