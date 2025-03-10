@@ -11,33 +11,47 @@ UUHAttachable::UUHAttachable()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
+bool UUHAttachable::IsAttachInProgress() const
+{
+	return State == EUHAttachableState::Attaching;
+}
+
 void UUHAttachable::StartAttaching(float InMaxAttachDistance)
 {
 	if (!Parts.IsEmpty())
 	{
-		bAttachInProgress = true;
+		State = EUHAttachableState::Attaching;
 		MaxAttachDistance = InMaxAttachDistance;
 	}
 }
 
 void UUHAttachable::StopAttaching()
 {
-	bAttachInProgress = false;
 	StopSticking();
+	State = EUHAttachableState::Idle;
+}
+
+bool UUHAttachable::IsStickInProgress() const
+{
+	return State == EUHAttachableState::Sticking;
 }
 
 bool UUHAttachable::StartSticking()
 {
-	if (bAttachInProgress && CurrentTarget && CurrentDistance < MaxAttachDistance && MovementComponent)
+	if (IsAttachInProgress() && CurrentTarget && CurrentDistance < MaxAttachDistance && MovementComponent)
 	{
 		ensure(CurrentTheirPrimitive);
 		ensure(CurrentOurPrimitive);
 
 		auto* OurBlock = Cast<AUHBaseBlock>(CurrentOurPrimitive->GetOwner());
+		if (!ensure(OurBlock))
+		{
+			return false;
+		}
+		
 		OurBlock->Reroot(CurrentOurPrimitive);
 		
-		bAttachInProgress = false;
-		bStickInProgress = true;
+		State = EUHAttachableState::Sticking;
 		OurTargetRotation = SnappedRelativeRotation(CurrentOurPrimitive, CurrentTheirPrimitive);
 		TheirTargetRotation = SnappedRelativeRotation(CurrentTheirPrimitive, CurrentOurPrimitive);
 		SetSimulatePhysics(false);
@@ -162,7 +176,7 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		}
 	}
 
-	if (bAttachInProgress)
+	if (IsAttachInProgress())
 	{
 		UpdateCurrentTarget();
 
@@ -178,7 +192,7 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		}
 	}
 
-	if (bStickInProgress)
+	if (IsStickInProgress())
 	{
 		const FVector OurSocketLocation = CurrentOurPrimitive->GetComponentTransform().TransformPosition(Parts[CurrentOurPartIndex].Sockets[CurrentOurSocketIndex].Location);
 		const FVector TheirSocketLocation = CurrentTheirPrimitive->GetComponentTransform().TransformPosition(CurrentTarget->Parts[CurrentTheirPartIndex].Sockets[CurrentTheirSocketIndex].Location);
@@ -313,7 +327,7 @@ void UUHAttachable::UpdateCurrentTarget()
 
 void UUHAttachable::StopSticking()
 {
-	if (bStickInProgress)
+	if (IsStickInProgress())
 	{
 		MovementComponent->StopMovementImmediately();
 		CurrentTarget->MovementComponent->StopMovementImmediately();
@@ -332,7 +346,7 @@ void UUHAttachable::StopSticking()
 		TheirTargetRotation = FRotator::ZeroRotator;
 		OurTargetRotation = FRotator::ZeroRotator;
 		
-		bStickInProgress = false;
+		State = EUHAttachableState::Attaching;
 	}
 }
 

@@ -5,7 +5,6 @@
 #include "UHAttachable.generated.h"
 
 
-class UPhysicsConstraintComponent;
 class UUHBlockMovementComponent;
 
 
@@ -35,6 +34,15 @@ struct ULTRAHANDMECHANICS_API FUHAttachmentPart
 };
 
 
+UENUM()
+enum class EUHAttachableState
+{
+	Idle,
+	Attaching,
+	Sticking
+};
+
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ULTRAHANDMECHANICS_API UUHAttachable : public UActorComponent
 {
@@ -58,9 +66,11 @@ public:
 
 	UUHAttachable();
 
+	bool IsAttachInProgress() const;
 	void StartAttaching(float InMaxAttachDistance);
 	void StopAttaching();
 
+	bool IsStickInProgress() const;
 	bool StartSticking();
 
 	void Detach(USceneComponent* PartToDetach);
@@ -96,8 +106,7 @@ private:
 		uint32 OurParentPartIndex,
 		TSet<uint32>& CopiedParts);
 	
-	bool bAttachInProgress;
-	bool bStickInProgress;
+	EUHAttachableState State;
 	float MaxAttachDistance;
 
 	UPROPERTY()

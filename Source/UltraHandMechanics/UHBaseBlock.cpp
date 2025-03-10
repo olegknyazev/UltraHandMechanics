@@ -30,7 +30,10 @@ void AUHBaseBlock::SetHighlightedPart(UStaticMeshComponent* Component)
 {
 	if (Component)
 	{
-		ensure(Component->GetOwner() == this);
+		if (!ensure(Component->GetOwner() == this))
+		{
+			return;
+		}
 		BlockComponent->SetPrimitiveComponent(Component);
 	}
 	BlockComponent->SetHighlighted(Component != nullptr);
@@ -53,20 +56,24 @@ void AUHBaseBlock::Reroot(USceneComponent* NewRoot)
 		return;
 	}
 	
-	USceneComponent* const OldRoot = GetRootComponent();
-	if (OldRoot == NewRoot)
+	auto* const NewRootPrimitive = Cast<UPrimitiveComponent>(NewRoot);
+	if (!ensure(NewRootPrimitive))
 	{
 		return;
 	}
 	
-	UPrimitiveComponent* const OldRootPrimitive = Cast<UPrimitiveComponent>(OldRoot);
-	UPrimitiveComponent* const NewRootPrimitive = Cast<UPrimitiveComponent>(NewRoot);
+	auto* const OldRootPrimitive = Cast<UPrimitiveComponent>(GetRootComponent());
+	check(OldRootPrimitive);
+	
+	if (OldRootPrimitive == NewRootPrimitive)
+	{
+		return;
+	}
 
 	OldRootPrimitive->SetSimulatePhysics(false);
 	NewRoot->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 	SetRootComponent(NewRoot);
-	OldRoot->AttachToComponent(NewRoot, FAttachmentTransformRules::KeepWorldTransform);
-
+	OldRootPrimitive->AttachToComponent(NewRoot, FAttachmentTransformRules::KeepWorldTransform);
 	OldRootPrimitive->WeldTo(NewRoot);
 
 	MovementComponent->SetUpdatedComponent(NewRoot);
