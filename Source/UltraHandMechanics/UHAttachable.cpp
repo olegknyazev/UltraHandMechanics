@@ -115,6 +115,8 @@ void UUHAttachable::Detach(USceneComponent* PartToDetach)
 
 	ensure(Parts.Num() == 1);
 	Parts[0].ConnectedPartIndices.Reset();
+	
+	MovementComponent->UpdatedComponentShapeMightChange();
 }
 
 void UUHAttachable::CopyPartsFrom(
@@ -369,6 +371,8 @@ void UUHAttachable::Attach(UUHAttachable* Other)
 
 	TSet<const FUHAttachmentPart*> AttachedParts;
 	Attach(Other, OtherStartPart, AttachedParts, CurrentOurPartIndex);
+
+	MovementComponent->UpdatedComponentShapeMightChange();
 	
 	Other->GetOwner()->Destroy();
 }

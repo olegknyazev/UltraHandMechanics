@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -15,6 +13,9 @@ class ULTRAHANDMECHANICS_API UUHBlockMovementComponent : public UMovementCompone
 public:
 	UPROPERTY()
 	FRotator AngularVelocity;
+
+	UPROPERTY(EditAnywhere)
+	float MaxAngularSpeed;
 	
 	UUHBlockMovementComponent();
 
@@ -26,4 +27,15 @@ public:
 		FActorComponentTickFunction* ThisTickFunction) override;
 
 	virtual void StopMovementImmediately() override;
+
+	virtual void SetUpdatedComponent(USceneComponent* NewUpdatedComponent) override;
+	
+	void UpdatedComponentShapeMightChange();
+	
+private:
+	FRotator ClampAngularVelocity(const FRotator& AngularVelocity) const;
+
+	void UpdateBlockRadius();
+	
+	float BlockRadius;
 };
