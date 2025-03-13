@@ -54,8 +54,6 @@ bool UUHAttachable::StartSticking()
 		State = EUHAttachableState::Sticking;
 		OurTargetRotation = SnappedRelativeRotation(CurrentOurPrimitive, CurrentTheirPrimitive);
 		TheirTargetRotation = SnappedRelativeRotation(CurrentTheirPrimitive, CurrentOurPrimitive);
-		SetSimulatePhysics(false);
-		CurrentTarget->SetSimulatePhysics(false);
 		RemainingDistance = -1.f;
 		RemainingAngle = -1.f;
 		
@@ -204,17 +202,17 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 			TheirSocketLocation,
 			FColor::Red);
 
-		const FRotator OurDelta = (OurTargetRotationInWorldSpace() - CurrentOurPrimitive->GetComponentRotation()).GetNormalized();
+		const FVector OurDelta = (OurTargetRotationInWorldSpace() - CurrentOurPrimitive->GetComponentRotation()).GetNormalized().Quaternion().ToRotationVector();
 		MovementComponent->AngularVelocity = OurDelta * RotationSpeed;
 		
-		const FRotator TheirDelta = (TheirTargetRotationInWorldSpace() - CurrentTheirPrimitive->GetComponentRotation()).GetNormalized();
+		const FVector TheirDelta = (TheirTargetRotationInWorldSpace() - CurrentTheirPrimitive->GetComponentRotation()).GetNormalized().Quaternion().ToRotationVector();
 		CurrentTarget->MovementComponent->AngularVelocity = TheirDelta * RotationSpeed;
 
 		MovementComponent->Velocity = (TheirSocketLocation - OurSocketLocation) * MovementSpeed;
 		CurrentTarget->MovementComponent->Velocity = (OurSocketLocation - TheirSocketLocation) * MovementSpeed;
 
 		const float NewRemainingDistance = FVector::Distance(TheirSocketLocation, OurSocketLocation);
-		const float NewRemainingAngle = OurDelta.Quaternion().GetAngle();
+		const float NewRemainingAngle = OurDelta.Size();
 
 		if (NewRemainingDistance < 1.f && NewRemainingAngle < 0.01f)
 		{
@@ -333,9 +331,6 @@ void UUHAttachable::StopSticking()
 	{
 		MovementComponent->StopMovementImmediately();
 		CurrentTarget->MovementComponent->StopMovementImmediately();
-
-		SetSimulatePhysics(true);
-		CurrentTarget->SetSimulatePhysics(true);
 
 		CurrentOurPrimitive = nullptr;
 		CurrentTheirPrimitive = nullptr;

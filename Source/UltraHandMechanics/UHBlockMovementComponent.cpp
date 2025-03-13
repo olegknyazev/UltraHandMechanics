@@ -22,20 +22,27 @@ void UUHBlockMovementComponent::TickComponent(
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	const FRotator RotationDelta = ClampAngularVelocity(AngularVelocity) * DeltaTime;
-	const FVector RotationInducedOffset = RotationDelta.IsNearlyZero() ? FVector::Zero() : RotationDelta.Vector() * DeltaTime * 10.f;
-	const FVector MoveDelta = Velocity * DeltaTime + RotationInducedOffset;
-
-	if (!MoveDelta.IsNearlyZero() || !RotationDelta.IsNearlyZero())
+	if (!UpdatedPrimitive)
 	{
-		const FRotator Rotation = UpdatedComponent->GetComponentRotation() + RotationDelta;
-		
-		FHitResult Hit;
-		SafeMoveUpdatedComponent(MoveDelta, Rotation, true, Hit);
-		if (Hit.bBlockingHit)
-		{
-			SlideAlongSurface(MoveDelta, 1 - Hit.Time, Hit.Normal, Hit, false);
-		}
+		return;
+	}
+
+	if (!Velocity.IsNearlyZero())
+	{
+		const FVector TargetLinearVelocity = Velocity;
+		const FVector LinearVelocityChange = TargetLinearVelocity - UpdatedPrimitive->GetPhysicsLinearVelocity();
+		const FVector LinearAccelerationChange = LinearVelocityChange * 20.f;
+
+		UpdatedPrimitive->AddForce(LinearAccelerationChange, NAME_None, true);
+	}
+
+	if (!AngularVelocity.IsNearlyZero())
+	{
+		const FVector TargetAngularVelocity = ClampAngularVelocity(AngularVelocity);
+		const FVector AngularVelocityChange = TargetAngularVelocity - UpdatedPrimitive->GetPhysicsAngularVelocityInRadians();
+		const FVector AngularAccelerationChange = AngularVelocityChange * 20.f;
+
+		UpdatedPrimitive->AddTorqueInRadians(AngularAccelerationChange, NAME_None, true);
 	}
 }
 
@@ -43,7 +50,7 @@ void UUHBlockMovementComponent::StopMovementImmediately()
 {
 	Super::StopMovementImmediately();
 	
-	AngularVelocity = FRotator::ZeroRotator;
+	AngularVelocity = FVector::Zero();
 }
 
 void UUHBlockMovementComponent::SetUpdatedComponent(USceneComponent* NewUpdatedComponent)
@@ -58,7 +65,7 @@ void UUHBlockMovementComponent::UpdatedComponentShapeMightChange()
 	UpdateBlockRadius();
 }
 
-FRotator UUHBlockMovementComponent::ClampAngularVelocity(const FRotator& AngularVelocity) const
+FVector UUHBlockMovementComponent::ClampAngularVelocity(const FVector& AngularVelocity) const
 {
 	if (MaxAngularSpeed <= 0.f)
 	{
@@ -75,7 +82,7 @@ FRotator UUHBlockMovementComponent::ClampAngularVelocity(const FRotator& Angular
 		return AngularVelocity;
 	}
 
-	const float TangentialVelocity = BlockRadius * 2.f * FMath::Sin(FQuat::Identity.AngularDistance(AngularVelocity.Quaternion()) / 2.f);
+	const float TangentialVelocity = BlockRadius * 2.f * FMath::Sin(AngularVelocity.Length() / 2.f);
 	const float ScaleFactor = FMath::Clamp(MaxAngularSpeed / TangentialVelocity, 0.f, 1.f);
 	return AngularVelocity * ScaleFactor;
 }

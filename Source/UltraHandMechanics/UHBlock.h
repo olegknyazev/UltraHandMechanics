@@ -17,6 +17,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* HighlightedMaterial;
 
+	UPROPERTY(EditAnywhere)
+	UPhysicalMaterial* ManipulatedPhysicalMaterial;
+	
 	UPROPERTY()
 	UUHBlockMovementComponent* MovementComponent;
 

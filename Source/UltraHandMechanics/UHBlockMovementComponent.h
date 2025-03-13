@@ -12,7 +12,7 @@ class ULTRAHANDMECHANICS_API UUHBlockMovementComponent : public UMovementCompone
 
 public:
 	UPROPERTY()
-	FRotator AngularVelocity;
+	FVector AngularVelocity;
 
 	UPROPERTY(EditAnywhere)
 	float MaxAngularSpeed;
@@ -33,7 +33,7 @@ public:
 	void UpdatedComponentShapeMightChange();
 	
 private:
-	FRotator ClampAngularVelocity(const FRotator& AngularVelocity) const;
+	FVector ClampAngularVelocity(const FVector& AngularVelocity) const;
 
 	void UpdateBlockRadius();
 	

@@ -44,7 +44,8 @@ void UUHBlock::SetManipulated(bool bInManipulated)
 			MovementComponent->StopMovementImmediately();
 		}
 
-		PrimitiveComponent->SetSimulatePhysics(!bManipulated);
+		PrimitiveComponent->SetEnableGravity(!bManipulated);
+		PrimitiveComponent->SetPhysMaterialOverride(bManipulated ? ManipulatedPhysicalMaterial : nullptr);
 	}
 }
 
@@ -128,8 +129,16 @@ void UUHBlock::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 	{
 		if (MovementComponent)
 		{
-			MovementComponent->Velocity = (TargetLocation - GetOwner()->GetActorLocation()) / TargetApproachTime;
-			MovementComponent->AngularVelocity = (TargetRotation - GetOwner()->GetActorRotation()).GetNormalized() * (1.f / TargetApproachTime);
+			const FVector TargetLinearVelocity = (TargetLocation - GetOwner()->GetActorLocation()) / TargetApproachTime;
+
+			MovementComponent->Velocity = TargetLinearVelocity;
+
+			const FQuat CurrentRotation = PrimitiveComponent->GetComponentRotation().Quaternion();
+			FQuat AlignedTargetRotation = TargetRotation.Quaternion();
+			AlignedTargetRotation.EnforceShortestArcWith(CurrentRotation);
+			const FVector TargetAngularVelocity = (AlignedTargetRotation * CurrentRotation.Inverse()).ToRotationVector() / TargetApproachTime;
+
+			MovementComponent->AngularVelocity = TargetAngularVelocity;
 		}
 	}
 }
