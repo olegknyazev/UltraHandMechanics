@@ -82,7 +82,7 @@ FVector UUHBlockMovementComponent::ClampAngularVelocity(const FVector& AngularVe
 		return AngularVelocity;
 	}
 
-	const float TangentialVelocity = BlockRadius * 2.f * FMath::Sin(AngularVelocity.Length() / 2.f);
+	const float TangentialVelocity = BlockRadius * AngularVelocity.Length();
 	const float ScaleFactor = FMath::Clamp(MaxAngularSpeed / TangentialVelocity, 0.f, 1.f);
 	return AngularVelocity * ScaleFactor;
 }
