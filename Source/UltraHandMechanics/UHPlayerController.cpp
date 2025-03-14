@@ -20,6 +20,18 @@ void AUHPlayerController::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 }
 
+void AUHPlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused)
+{
+	Super::PostProcessInput(DeltaTime, bGamePaused);
+
+	if (MaxRotationSpeed > 0.f)
+	{
+		const float MaxRotationPerFrame = MaxRotationSpeed * DeltaTime;
+		RotationInput.Pitch = FMath::Clamp(RotationInput.Pitch, -MaxRotationPerFrame, MaxRotationPerFrame);
+		RotationInput.Yaw = FMath::Clamp(RotationInput.Yaw, -MaxRotationPerFrame, MaxRotationPerFrame);
+	}
+}
+
 void AUHPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();

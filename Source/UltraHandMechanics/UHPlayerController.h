@@ -78,10 +78,15 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* UltraHandDetachAction;
+
+	UPROPERTY(EditAnywhere)
+	float MaxRotationSpeed;
 	
 	AUHPlayerController();
 	
 	virtual void Tick(float DeltaSeconds) override;
+
+	virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;
 
 protected:
 	virtual void SetupInputComponent() override;
