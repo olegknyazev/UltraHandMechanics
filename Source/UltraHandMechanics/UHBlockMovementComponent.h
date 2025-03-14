@@ -16,6 +16,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float MaxAngularSpeed;
+
+	UPROPERTY(EditAnywhere)
+	float MaxLinearForce;
 	
 	UUHBlockMovementComponent();
 
