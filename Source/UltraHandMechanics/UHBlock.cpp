@@ -7,6 +7,7 @@
 UUHBlock::UUHBlock()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.TickGroup = TG_PrePhysics;
 }
 
 bool UUHBlock::IsHighlighted() const

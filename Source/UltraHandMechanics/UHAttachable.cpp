@@ -9,6 +9,7 @@
 UUHAttachable::UUHAttachable()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.TickGroup = TG_PostPhysics;
 }
 
 bool UUHAttachable::IsAttachInProgress() const

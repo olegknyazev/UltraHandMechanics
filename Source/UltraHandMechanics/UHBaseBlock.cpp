@@ -15,6 +15,7 @@ AUHBaseBlock::AUHBaseBlock()
 
 	MovementComponent = CreateDefaultSubobject<UUHBlockMovementComponent>(TEXT("Movement"));
 	MovementComponent->UpdatedComponent = MeshComponent;
+	MovementComponent->AddTickPrerequisiteComponent(BlockComponent);
 	
 	AttachableComponent = CreateDefaultSubobject<UUHAttachable>(TEXT("Attachable"));
 	AttachableComponent->AttachablePrimitive = MeshComponent;
