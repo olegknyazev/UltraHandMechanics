@@ -81,10 +81,24 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float MaxRotationSpeed;
+
+	UPROPERTY(EditAnywhere)
+	float RotationCorrectionDelay;
+
+	UPROPERTY(EditAnywhere)
+	float RotationCorrectionSpeed;
+
+	UPROPERTY(EditAnywhere)
+	float MaxYawOffset;
+
+	UPROPERTY(EditAnywhere)
+	float MaxDistanceOffset;
 	
 	AUHPlayerController();
 	
 	virtual void Tick(float DeltaSeconds) override;
+
+	virtual void PlayerTick(float DeltaTime) override;
 
 	virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;
 
@@ -111,4 +125,6 @@ private:
 	void UltraHandDetach();
 
 	AUHCharacter* GetUltraHandCharacter() const;
+
+	float TimeSinceLastUltraHandInput;
 };

@@ -30,6 +30,7 @@ public:
 	
 	UUHManipulator();
 
+	bool IsManipulationInProgress() const;
 	void StartManipulation(UStaticMeshComponent* InManipulatedPart);
 	void StopManipulation();
 	
@@ -43,6 +44,9 @@ public:
 	bool StartSticking();
 
 	void Detach();
+
+	FVector GetOffset() const;
+	FVector GetError() const;
 
 	virtual void BeginPlay() override;
 

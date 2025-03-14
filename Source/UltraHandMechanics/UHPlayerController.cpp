@@ -3,7 +3,6 @@
 #include "UHManipulator.h"
 #include "UHPicker.h"
 #include "UHCharacter.h"
-#include "UHBaseBlock.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -20,6 +19,26 @@ void AUHPlayerController::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 }
 
+void AUHPlayerController::PlayerTick(float DeltaTime)
+{
+	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	{
+		if (Manipulator->IsManipulationInProgress())
+		{
+			TimeSinceLastUltraHandInput += DeltaTime;
+
+			if (RotationCorrectionDelay > 0.f && RotationCorrectionSpeed > 0.f && TimeSinceLastUltraHandInput >= RotationCorrectionDelay)
+			{
+				const float YawOffset = Manipulator->GetOffset().HeadingAngle();
+				const float YawDelta = FMath::FInterpTo(0.f, FMath::RadiansToDegrees(YawOffset), DeltaTime, RotationCorrectionSpeed);
+				GetPawn()->AddControllerYawInput(YawDelta);
+			}
+		}
+	}
+	
+	Super::PlayerTick(DeltaTime);
+}
+
 void AUHPlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused)
 {
 	Super::PostProcessInput(DeltaTime, bGamePaused);
@@ -29,6 +48,19 @@ void AUHPlayerController::PostProcessInput(const float DeltaTime, const bool bGa
 		const float MaxRotationPerFrame = MaxRotationSpeed * DeltaTime;
 		RotationInput.Pitch = FMath::Clamp(RotationInput.Pitch, -MaxRotationPerFrame, MaxRotationPerFrame);
 		RotationInput.Yaw = FMath::Clamp(RotationInput.Yaw, -MaxRotationPerFrame, MaxRotationPerFrame);
+	}
+
+	if (MaxYawOffset > 0.f)
+	{
+		if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+		{
+			if (Manipulator->IsManipulationInProgress() && TimeSinceLastUltraHandInput == 0.f)
+			{
+				const float YawOffset = FMath::RadiansToDegrees(Manipulator->GetOffset().HeadingAngle());
+				const float YawOffsetRatio = FMath::Clamp(FMath::Abs(YawOffset) / MaxYawOffset, 0.f, 1.f);
+				RotationInput.Yaw *= 1.f - FMath::Square(YawOffsetRatio);
+			}
+		}
 	}
 }
 
@@ -161,7 +193,7 @@ void AUHPlayerController::Move(const FInputActionValue& Value)
 		return;
 	}
 	
-	const auto MovementVector = Value.Get<FVector2D>();
+	auto MovementVector = Value.Get<FVector2D>();
 
 	const FRotator Rotation = GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -169,8 +201,25 @@ void AUHPlayerController::Move(const FInputActionValue& Value)
 	const FVector ForwardDirection = RotationMatrix.GetUnitAxis(EAxis::X);
 	const FVector RightDirection = RotationMatrix.GetUnitAxis(EAxis::Y);
 
+	if (MaxDistanceOffset > 0.f && !MovementVector.IsNearlyZero())
+	{
+		if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+		{
+			if (Manipulator->IsManipulationInProgress())
+			{
+				const FVector Error = Manipulator->GetError();
+				const float ErrorRatio = FMath::Clamp(Error.Length() / MaxDistanceOffset, 0.f, 1.f);
+				const FVector2D Error2D{Error.Y, Error.X};
+				const float MovementAlignmentFactor = ((Error2D.GetSafeNormal() | MovementVector.GetSafeNormal()) + 1.f) * 0.5f;
+				MovementVector *= 1.f - FMath::Square(ErrorRatio) * MovementAlignmentFactor;
+			}
+		}
+	}
+	
 	GetPawn()->AddMovementInput(ForwardDirection, MovementVector.Y);
 	GetPawn()->AddMovementInput(RightDirection, MovementVector.X);
+	
+	TimeSinceLastUltraHandInput = 0.f;
 }
 
 void AUHPlayerController::Look(const FInputActionValue& Value)
@@ -191,6 +240,8 @@ void AUHPlayerController::UltraHandMove(const FInputActionValue& Value)
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{
 		Manipulator->MoveRelative(Value.Get<FVector>());
+	
+		TimeSinceLastUltraHandInput = 0.f;
 	}
 }
 
@@ -204,6 +255,8 @@ void AUHPlayerController::UltraHandLook(const FInputActionValue& Value)
 	const auto LookYawValue = Value.Get<float>();
 	
 	GetPawn()->AddControllerYawInput(LookYawValue);
+	
+	TimeSinceLastUltraHandInput = 0.f;
 }
 
 void AUHPlayerController::UltraHandTurnStart()

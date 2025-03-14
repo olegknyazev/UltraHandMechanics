@@ -9,6 +9,11 @@ UUHManipulator::UUHManipulator()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
+bool UUHManipulator::IsManipulationInProgress() const
+{
+	return ManipulatedBlock != nullptr;
+}
+
 void UUHManipulator::StartManipulation(UStaticMeshComponent* InManipulatedPart)
 {
 	StopManipulation();
@@ -118,6 +123,16 @@ void UUHManipulator::Detach()
 
 		ManipulatedBlock->SetManipulated(false);
 	}
+}
+
+FVector UUHManipulator::GetOffset() const
+{
+	return ManipulatedBlock ? GetOriginTransform().InverseTransformPosition(ManipulatedBlock->GetBlockLocation()) : FVector::Zero();
+}
+
+FVector UUHManipulator::GetError() const
+{
+	return ManipulatedBlock ? BlockRelativeLocation - GetOffset() : FVector::Zero();
 }
 
 void UUHManipulator::BeginPlay()
