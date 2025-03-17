@@ -119,7 +119,7 @@ void AUHPlayerController::StopJumping()
 
 void AUHPlayerController::UltraHandStart()
 {
-	UE_LOG(LogTemp, Display, TEXT("UltraHandStart"));
+	UE_LOG(LogPlayerController, Display, TEXT("UltraHandStart"));
 	
 	Picker->SetPickingEnabled(true);
 	
@@ -136,7 +136,7 @@ void AUHPlayerController::UltraHandStart()
 
 void AUHPlayerController::UltraHandPick()
 {
-	UE_LOG(LogTemp, Display, TEXT("UltraHandPick"));
+	UE_LOG(LogPlayerController, Display, TEXT("UltraHandPick"));
 	
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{
@@ -166,7 +166,7 @@ void AUHPlayerController::UltraHandPick()
 
 void AUHPlayerController::UltraHandStop()
 {
-	UE_LOG(LogTemp, Display, TEXT("UltraHandStop"));
+	UE_LOG(LogPlayerController, Display, TEXT("UltraHandStop"));
 	
 	Picker->SetPickingEnabled(false);
 	
@@ -249,7 +249,7 @@ void AUHPlayerController::UltraHandLook(const FInputActionValue& Value)
 
 void AUHPlayerController::UltraHandTurnStart()
 {
-	UE_LOG(LogTemp, Display, TEXT("UltraHandTurnStart"));
+	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnStart"));
 	
 	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
@@ -259,7 +259,7 @@ void AUHPlayerController::UltraHandTurnStart()
 
 void AUHPlayerController::UltraHandTurnStop()
 {
-	UE_LOG(LogTemp, Display, TEXT("UltraHandTurnStop"));
+	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnStop"));
 	
 	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
@@ -269,7 +269,7 @@ void AUHPlayerController::UltraHandTurnStop()
 
 void AUHPlayerController::UltraHandTurnLeft()
 {
-	UE_LOG(LogTemp, Display, TEXT("UltraHandTurnLeft"));
+	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnLeft"));
 	
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{
@@ -279,7 +279,7 @@ void AUHPlayerController::UltraHandTurnLeft()
 
 void AUHPlayerController::UltraHandTurnRight()
 {
-	UE_LOG(LogTemp, Display, TEXT("UltraHandTurnRight"));
+	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnRight"));
 	
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{
@@ -289,7 +289,7 @@ void AUHPlayerController::UltraHandTurnRight()
 
 void AUHPlayerController::UltraHandTurnUp()
 {
-	UE_LOG(LogTemp, Display, TEXT("UltraHandTurnUp"));
+	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnUp"));
 	
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{
@@ -299,7 +299,7 @@ void AUHPlayerController::UltraHandTurnUp()
 
 void AUHPlayerController::UltraHandTurnDown()
 {
-	UE_LOG(LogTemp, Display, TEXT("UltraHandTurnDown"));
+	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnDown"));
 	
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{
@@ -309,7 +309,7 @@ void AUHPlayerController::UltraHandTurnDown()
 
 void AUHPlayerController::UltraHandAttach()
 {
-	UE_LOG(LogTemp, Display, TEXT("UltraHandAttach"));
+	UE_LOG(LogPlayerController, Display, TEXT("UltraHandAttach"));
 
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{
@@ -322,7 +322,7 @@ void AUHPlayerController::UltraHandAttach()
 
 void AUHPlayerController::UltraHandDetach()
 {
-	UE_LOG(LogTemp, Display, TEXT("UltraHandDetach"));
+	UE_LOG(LogPlayerController, Display, TEXT("UltraHandDetach"));
 
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{

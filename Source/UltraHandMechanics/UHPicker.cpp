@@ -3,6 +3,9 @@
 #include "UHBaseBlock.h"
 
 
+DEFINE_LOG_CATEGORY(LogUHPicker);
+
+
 UUHPicker::UUHPicker()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -74,7 +77,7 @@ void UUHPicker::SetSelectedPart(UStaticMeshComponent* Part)
 		
 		SelectedMesh = PartToSelect;
 
-		UE_LOG(LogTemp, Display, TEXT("SelectedBlock is now %s (%s)"),
+		UE_LOG(LogUHPicker, Display, TEXT("Selected block is now %s (%s)"),
         	SelectedBlock ? *SelectedBlock->GetName() : TEXT("None"),
         	SelectedMesh ? *SelectedMesh->GetName() : TEXT("None"));
 	}

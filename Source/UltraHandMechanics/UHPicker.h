@@ -8,6 +8,10 @@
 class AUHBaseBlock;
 class UUHBlock;
 
+
+DECLARE_LOG_CATEGORY_EXTERN(LogUHPicker, Log, All);
+
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ULTRAHANDMECHANICS_API UUHPicker : public UActorComponent
 {

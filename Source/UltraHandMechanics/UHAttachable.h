@@ -8,6 +8,9 @@
 class UUHBlockMovementComponent;
 
 
+DECLARE_LOG_CATEGORY_EXTERN(LogUHAttachable, Log, All);
+
+
 USTRUCT()
 struct ULTRAHANDMECHANICS_API FUHAttachmentSocket
 {

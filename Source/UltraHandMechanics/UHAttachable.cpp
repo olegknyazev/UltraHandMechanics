@@ -6,6 +6,9 @@
 #include "Engine/OverlapResult.h"
 
 
+DEFINE_LOG_CATEGORY(LogUHAttachable);
+
+
 UUHAttachable::UUHAttachable()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -217,7 +220,7 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 
 		if (NewRemainingDistance < 1.f && NewRemainingAngle < 0.01f)
 		{
-			UE_LOG(LogTemp, Display, TEXT("Sticking complete"));
+			UE_LOG(LogUHAttachable, Display, TEXT("Sticking complete"));
 
 			Attach(CurrentTarget);
 
@@ -226,7 +229,7 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		else if ((RemainingDistance > 0.f && FMath::Abs(NewRemainingDistance - RemainingDistance) < UE_KINDA_SMALL_NUMBER) &&
 			(RemainingAngle > 0.f && FMath::Abs(NewRemainingAngle - RemainingAngle) < UE_KINDA_SMALL_NUMBER))
 		{
-			UE_LOG(LogTemp, Display, TEXT("Stuck!"));
+			UE_LOG(LogUHAttachable, Display, TEXT("Stuck!"));
 			
 			StopSticking();
 		}
