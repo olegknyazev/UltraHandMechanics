@@ -62,6 +62,8 @@ void AUHPlayerController::PostProcessInput(const float DeltaTime, const bool bGa
 			}
 		}
 	}
+
+	RotationInput.Yaw *= MovementScale(FMath::Sign(RotationInput.Yaw) * UE_PI / 2.f);
 }
 
 void AUHPlayerController::SetupInputComponent()
@@ -194,28 +196,14 @@ void AUHPlayerController::Move(const FInputActionValue& Value)
 	}
 	
 	auto MovementVector = Value.Get<FVector2D>();
-
+	MovementVector *= MovementScale(FMath::Atan2(MovementVector.X, MovementVector.Y));
+	
 	const FRotator Rotation = GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
 	const FRotationMatrix RotationMatrix(YawRotation);
 	const FVector ForwardDirection = RotationMatrix.GetUnitAxis(EAxis::X);
 	const FVector RightDirection = RotationMatrix.GetUnitAxis(EAxis::Y);
 
-	if (MaxDistanceOffset > 0.f && !MovementVector.IsNearlyZero())
-	{
-		if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
-		{
-			if (Manipulator->IsManipulationInProgress())
-			{
-				const FVector Error = Manipulator->GetError();
-				const float ErrorRatio = FMath::Clamp(Error.Length() / MaxDistanceOffset, 0.f, 1.f);
-				const FVector2D Error2D{Error.Y, Error.X};
-				const float MovementAlignmentFactor = ((Error2D.GetSafeNormal() | MovementVector.GetSafeNormal()) + 1.f) * 0.5f;
-				MovementVector *= 1.f - FMath::Square(ErrorRatio) * MovementAlignmentFactor;
-			}
-		}
-	}
-	
 	GetPawn()->AddMovementInput(ForwardDirection, MovementVector.Y);
 	GetPawn()->AddMovementInput(RightDirection, MovementVector.X);
 	
@@ -347,4 +335,24 @@ void AUHPlayerController::UltraHandDetach()
 AUHCharacter* AUHPlayerController::GetUltraHandCharacter() const
 {
 	return Cast<AUHCharacter>(GetPawn());
+}
+
+float AUHPlayerController::MovementScale(float LocalHeadingAngle) const
+{
+	if (MaxDistanceOffset > 0.f)
+	{
+		if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+		{
+			if (Manipulator->IsManipulationInProgress())
+			{
+				const FVector Error = Manipulator->GetError();
+				const float ErrorRatio = FMath::Clamp(Error.Length() / MaxDistanceOffset, 0.f, 1.f);
+				const float ErrorHeading = Error.HeadingAngle();
+				const float AlignmentFactor = FMath::Clamp(FMath::Cos(ErrorHeading - LocalHeadingAngle), 0.f, 1.f);
+				return 1.f - FMath::Square(ErrorRatio) * AlignmentFactor;
+			}
+		}
+	}
+
+	return 1.f;
 }

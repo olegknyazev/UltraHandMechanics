@@ -152,6 +152,12 @@ void UUHManipulator::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 		const FVector TargetLocation = OriginTransform.TransformPosition(BlockRelativeLocation);
 		const FQuat TargetRotation = OriginTransform.TransformRotation(BlockRelativeCurrentRotation);
 		ManipulatedBlock->SetTargetPlacement(TargetLocation, TargetRotation.Rotator());
+
+		DrawDebugSphere(GetWorld(), TargetLocation, 25.f, 16, FColor::Emerald);
+		DrawDebugLine(GetWorld(), GetOwner()->GetActorLocation(), TargetLocation, FColor::Emerald);
+
+		DrawDebugSphere(GetWorld(), ManipulatedBlock->GetBlockLocation(), 10.f, 12, FColor::Red);
+		DrawDebugLine(GetWorld(), ManipulatedBlock->GetBlockLocation(), TargetLocation, FColor::Red);
 	}
 }
 

@@ -126,5 +126,7 @@ private:
 
 	AUHCharacter* GetUltraHandCharacter() const;
 
+	float MovementScale(float LocalHeadingAngle) const;
+
 	float TimeSinceLastUltraHandInput;
 };
