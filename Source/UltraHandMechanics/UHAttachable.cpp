@@ -8,6 +8,21 @@
 
 DEFINE_LOG_CATEGORY(LogUHAttachable);
 
+namespace AttachableCVars
+{
+	static TAutoConsoleVariable<bool> DebugDrawSockets(
+		TEXT("uh.DebugDrawSockets"),
+		false,
+		TEXT("Defines whether the sockets debug visualization is enabled."),
+		ECVF_Default);
+	
+	static TAutoConsoleVariable<bool> DebugDrawSticking(
+		TEXT("uh.DebugDrawSticking"),
+		true,
+		TEXT("Defines whether the sticking process debug visualization is enabled."),
+		ECVF_Default);
+}
+
 
 UUHAttachable::UUHAttachable()
 {
@@ -169,14 +184,17 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	for (const FUHAttachmentPart& Part : Parts)
+	if (AttachableCVars::DebugDrawSockets.GetValueOnGameThread())
 	{
-		const FTransform& Transform = Part.PrimitiveComponent->GetComponentTransform();
-		for (const FUHAttachmentSocket& Socket : Part.Sockets)
+		for (const FUHAttachmentPart& Part : Parts)
 		{
-			const FVector Location = Transform.TransformPosition(Socket.Location);
-			const FRotator Rotation = Part.PrimitiveComponent->GetComponentRotation();
-			DrawDebugBox(GetWorld(), Location, FVector(3.f), Rotation.Quaternion(), FColor::Red);
+			const FTransform& Transform = Part.PrimitiveComponent->GetComponentTransform();
+			for (const FUHAttachmentSocket& Socket : Part.Sockets)
+			{
+				const FVector Location = Transform.TransformPosition(Socket.Location);
+				const FRotator Rotation = Part.PrimitiveComponent->GetComponentRotation();
+				DrawDebugBox(GetWorld(), Location, FVector(3.f), Rotation.Quaternion(), FColor::Red);
+			}
 		}
 	}
 
@@ -184,15 +202,18 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 	{
 		UpdateCurrentTarget();
 
-		if (CurrentTarget != nullptr)
+		if (AttachableCVars::DebugDrawSticking.GetValueOnGameThread())
 		{
-			const FVector OurSocketLocation = CurrentOurPrimitive->GetComponentTransform().TransformPosition(Parts[CurrentOurPartIndex].Sockets[CurrentOurSocketIndex].Location);
-			const FVector TheirSocketLocation = CurrentTheirPrimitive->GetComponentTransform().TransformPosition(CurrentTarget->Parts[CurrentTheirPartIndex].Sockets[CurrentTheirSocketIndex].Location);
-			DrawDebugLine(
-				GetWorld(),
-				OurSocketLocation,
-				TheirSocketLocation,
-				FColor::Cyan);
+			if (CurrentTarget != nullptr)
+			{
+				const FVector OurSocketLocation = CurrentOurPrimitive->GetComponentTransform().TransformPosition(Parts[CurrentOurPartIndex].Sockets[CurrentOurSocketIndex].Location);
+				const FVector TheirSocketLocation = CurrentTheirPrimitive->GetComponentTransform().TransformPosition(CurrentTarget->Parts[CurrentTheirPartIndex].Sockets[CurrentTheirSocketIndex].Location);
+				DrawDebugLine(
+					GetWorld(),
+					OurSocketLocation,
+					TheirSocketLocation,
+					FColor::Cyan);
+			}
 		}
 	}
 
@@ -200,11 +221,15 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 	{
 		const FVector OurSocketLocation = CurrentOurPrimitive->GetComponentTransform().TransformPosition(Parts[CurrentOurPartIndex].Sockets[CurrentOurSocketIndex].Location);
 		const FVector TheirSocketLocation = CurrentTheirPrimitive->GetComponentTransform().TransformPosition(CurrentTarget->Parts[CurrentTheirPartIndex].Sockets[CurrentTheirSocketIndex].Location);
-		DrawDebugLine(
-			GetWorld(),
-			OurSocketLocation,
-			TheirSocketLocation,
-			FColor::Red);
+
+		if (AttachableCVars::DebugDrawSticking.GetValueOnGameThread())
+		{
+			DrawDebugLine(
+				GetWorld(),
+				OurSocketLocation,
+				TheirSocketLocation,
+				FColor::Red);
+		}
 
 		const FVector OurDelta = (OurTargetRotationInWorldSpace() - CurrentOurPrimitive->GetComponentRotation()).GetNormalized().Quaternion().ToRotationVector();
 		MovementComponent->AngularVelocity = OurDelta * RotationSpeed;
@@ -269,13 +294,17 @@ void UUHAttachable::UpdateCurrentTarget()
 	{
 		const FCollisionShape InflatedShape = Part.PrimitiveComponent->GetCollisionShape(MaxAttachDistance);
 		const FVector ShapeLocation = Part.PrimitiveComponent->GetComponentLocation();
-		const FQuat ShapeRotation = Part.PrimitiveComponent->GetComponentRotation().Quaternion();
-		DrawDebugCollisionShape(GetWorld(), InflatedShape, ShapeLocation, ShapeRotation, FColor::Orange);
+		
+		if (AttachableCVars::DebugDrawSticking.GetValueOnGameThread())
+		{
+			DrawDebugCollisionShape(GetWorld(), InflatedShape, ShapeLocation, FQuat::Identity, FColor::Orange);
+		}
+		
 		OverlapsLocal.Reset();
 		GetWorld()->OverlapMultiByChannel(
 			OverlapsLocal,
 			ShapeLocation,
-			ShapeRotation,
+			FQuat::Identity,
 			ECC_Visibility,
 			InflatedShape,
 			QueryParams);

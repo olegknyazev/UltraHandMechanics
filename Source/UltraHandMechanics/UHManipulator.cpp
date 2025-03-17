@@ -4,6 +4,17 @@
 #include "UHBaseBlock.h"
 #include "UHBlock.h"
 
+
+namespace ManipulatorCVars
+{
+	static TAutoConsoleVariable<bool> DebugDrawManipulation(
+		TEXT("uh.DebugDrawManipulation"),
+		true,
+		TEXT("Defines whether the manipulation debug visualization is enabled."),
+		ECVF_Default);
+}
+
+
 UUHManipulator::UUHManipulator()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -153,11 +164,14 @@ void UUHManipulator::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 		const FQuat TargetRotation = OriginTransform.TransformRotation(BlockRelativeCurrentRotation);
 		ManipulatedBlock->SetTargetPlacement(TargetLocation, TargetRotation.Rotator());
 
-		DrawDebugSphere(GetWorld(), TargetLocation, 25.f, 16, FColor::Emerald);
-		DrawDebugLine(GetWorld(), GetOwner()->GetActorLocation(), TargetLocation, FColor::Emerald);
+		if (ManipulatorCVars::DebugDrawManipulation.GetValueOnGameThread())
+		{
+			DrawDebugSphere(GetWorld(), TargetLocation, 25.f, 16, FColor::Emerald);
+			DrawDebugLine(GetWorld(), GetOwner()->GetActorLocation(), TargetLocation, FColor::Emerald);
 
-		DrawDebugSphere(GetWorld(), ManipulatedBlock->GetBlockLocation(), 10.f, 12, FColor::Red);
-		DrawDebugLine(GetWorld(), ManipulatedBlock->GetBlockLocation(), TargetLocation, FColor::Red);
+			DrawDebugSphere(GetWorld(), ManipulatedBlock->GetBlockLocation(), 10.f, 12, FColor::Red);
+			DrawDebugLine(GetWorld(), ManipulatedBlock->GetBlockLocation(), TargetLocation, FColor::Red);
+		}
 	}
 }
 
