@@ -9,7 +9,7 @@ UUHManipulator::UUHManipulator()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-bool UUHManipulator::IsManipulationInProgress() const
+bool UUHManipulator::IsManipulating() const
 {
 	return ManipulatedBlock != nullptr;
 }

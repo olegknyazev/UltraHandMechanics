@@ -60,3 +60,10 @@ void AUHCharacter::ActivateUltraHandManipulatingCamera(USceneComponent* Manipula
 {
 	CameraController->ActivateUltraHandManipulatingMode(ManipulatedComponent);
 }
+
+void AUHCharacter::Tick(float DeltaSeconds)
+{
+	GetCharacterMovement()->MaxWalkSpeed = Manipulator->IsManipulating() ? WalkSpeedManipulating : WalkSpeed;
+	
+	Super::Tick(DeltaSeconds);
+}

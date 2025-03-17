@@ -30,7 +30,7 @@ public:
 	
 	UUHManipulator();
 
-	bool IsManipulationInProgress() const;
+	bool IsManipulating() const;
 	void StartManipulation(UStaticMeshComponent* InManipulatedPart);
 	void StopManipulation();
 	

@@ -27,11 +27,19 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	UUHCharacherCameraController* CameraController;
+
+	UPROPERTY(EditAnywhere)
+	float WalkSpeed;
+	
+	UPROPERTY(EditAnywhere)
+	float WalkSpeedManipulating;
 	
 	AUHCharacter();
 
 	void ActivateRegularCamera();
 	void ActivateUltraHandPickingCamera();
 	void ActivateUltraHandManipulatingCamera(USceneComponent* ManipulatedComponent);
+
+	virtual void Tick(float DeltaSeconds) override;
 };
 

@@ -23,7 +23,7 @@ void AUHPlayerController::PlayerTick(float DeltaTime)
 {
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{
-		if (Manipulator->IsManipulationInProgress())
+		if (Manipulator->IsManipulating())
 		{
 			TimeSinceLastUltraHandInput += DeltaTime;
 
@@ -54,7 +54,7 @@ void AUHPlayerController::PostProcessInput(const float DeltaTime, const bool bGa
 	{
 		if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 		{
-			if (Manipulator->IsManipulationInProgress() && TimeSinceLastUltraHandInput == 0.f)
+			if (Manipulator->IsManipulating() && TimeSinceLastUltraHandInput == 0.f)
 			{
 				const float YawOffset = FMath::RadiansToDegrees(Manipulator->GetOffset().HeadingAngle());
 				const float YawOffsetRatio = FMath::Clamp(FMath::Abs(YawOffset) / MaxYawOffset, 0.f, 1.f);
@@ -343,7 +343,7 @@ float AUHPlayerController::MovementScale(float LocalHeadingAngle) const
 	{
 		if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 		{
-			if (Manipulator->IsManipulationInProgress())
+			if (Manipulator->IsManipulating())
 			{
 				const FVector Error = Manipulator->GetError();
 				const float ErrorRatio = FMath::Clamp(Error.Length() / MaxDistanceOffset, 0.f, 1.f);
