@@ -3,6 +3,7 @@
 #include "UHAttachable.h"
 #include "UHBaseBlock.h"
 #include "UHBlock.h"
+#include "UHBlockMovementComponent.h"
 
 
 namespace ManipulatorCVars
@@ -162,8 +163,21 @@ void UUHManipulator::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 		const FTransform OriginTransform = GetOriginTransform();
 		const FVector TargetLocation = OriginTransform.TransformPosition(BlockRelativeLocation);
 		const FQuat TargetRotation = OriginTransform.TransformRotation(BlockRelativeCurrentRotation);
-		ManipulatedBlock->SetTargetPlacement(TargetLocation, TargetRotation.Rotator());
+		
+		if (TargetApproachTime > 0.f)
+		{
+			const FVector TargetLinearVelocity = (TargetLocation - ManipulatedBlock->GetBlockLocation()) / TargetApproachTime;
 
+			ManipulatedBlock->MovementComponent->Velocity = TargetLinearVelocity;
+
+			const FQuat CurrentRotation = ManipulatedBlock->GetBlockRotation().Quaternion();
+			FQuat AlignedTargetRotation = TargetRotation;
+			AlignedTargetRotation.EnforceShortestArcWith(CurrentRotation);
+			const FVector TargetAngularVelocity = (AlignedTargetRotation * CurrentRotation.Inverse()).ToRotationVector() / TargetApproachTime;
+
+			ManipulatedBlock->MovementComponent->AngularVelocity = TargetAngularVelocity;
+		}
+		
 		if (ManipulatorCVars::DebugDrawManipulation.GetValueOnGameThread())
 		{
 			DrawDebugSphere(GetWorld(), TargetLocation, 25.f, 16, FColor::Emerald);

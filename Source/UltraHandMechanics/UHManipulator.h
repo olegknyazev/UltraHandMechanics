@@ -28,6 +28,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	float MaxVerticalOffset;
 	
+	UPROPERTY(EditAnywhere)
+	float TargetApproachTime;
+	
 	UUHManipulator();
 
 	bool IsManipulating() const;

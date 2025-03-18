@@ -35,8 +35,6 @@ void UUHBlock::SetManipulated(bool bInManipulated)
 	if (bManipulated != bInManipulated)
 	{
 		bManipulated = bInManipulated;
-		TargetLocation = GetBlockLocation();
-		TargetRotation = GetBlockRotation();
 		
 		UpdateMaterial();
 		
@@ -88,12 +86,6 @@ FRotator UUHBlock::GetBlockRotation() const
 	return PrimitiveComponent->GetComponentRotation();
 }
 
-void UUHBlock::SetTargetPlacement(const FVector& Location, const FRotator& Rotation)
-{
-	TargetLocation = Location;
-	TargetRotation = Rotation;
-}
-
 bool UUHBlock::StartSticking()
 {
 	if (Attachable)
@@ -125,23 +117,6 @@ void UUHBlock::BeginPlay()
 void UUHBlock::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	if (bManipulated)
-	{
-		if (MovementComponent)
-		{
-			const FVector TargetLinearVelocity = (TargetLocation - GetOwner()->GetActorLocation()) / TargetApproachTime;
-
-			MovementComponent->Velocity = TargetLinearVelocity;
-
-			const FQuat CurrentRotation = PrimitiveComponent->GetComponentRotation().Quaternion();
-			FQuat AlignedTargetRotation = TargetRotation.Quaternion();
-			AlignedTargetRotation.EnforceShortestArcWith(CurrentRotation);
-			const FVector TargetAngularVelocity = (AlignedTargetRotation * CurrentRotation.Inverse()).ToRotationVector() / TargetApproachTime;
-
-			MovementComponent->AngularVelocity = TargetAngularVelocity;
-		}
-	}
 }
 
 void UUHBlock::UpdateMaterial()

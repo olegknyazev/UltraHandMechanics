@@ -26,9 +26,6 @@ public:
 	UPROPERTY()
 	UUHAttachable* Attachable;
 	
-	UPROPERTY(EditAnywhere)
-	float TargetApproachTime;
-	
 	UUHBlock();
 
 	UPrimitiveComponent* GetPrimitiveComponent() const;
@@ -42,8 +39,6 @@ public:
 
 	FVector GetBlockLocation() const;
 	FRotator GetBlockRotation() const;
-
-	void SetTargetPlacement(const FVector& Location, const FRotator& Rotation);
 
 	bool StartSticking();
 
@@ -63,7 +58,4 @@ private:
 	uint8 bHighlighted:1;
 	uint8 bManipulated:1;
 	uint8 bSelectedMaterialApplied:1;
-	
-	FVector TargetLocation;
-	FRotator TargetRotation;
 };
