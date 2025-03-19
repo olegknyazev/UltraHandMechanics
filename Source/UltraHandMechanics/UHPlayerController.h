@@ -6,9 +6,20 @@
 
 class AUHCharacter;
 class UUHPicker;
-struct FInputActionValue;
 class UInputAction;
 class UInputMappingContext;
+struct FInputActionValue;
+
+
+UENUM(BlueprintType)
+enum class EControlMode : uint8
+{
+	Regular,
+	UltraHandPicking,
+	UltraHandManipulation,
+	UltraHandTurning
+};
+
 
 UCLASS()
 class ULTRAHANDMECHANICS_API AUHPlayerController : public APlayerController
@@ -102,6 +113,9 @@ public:
 
 	virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;
 
+	UFUNCTION(BlueprintCallable)
+	EControlMode GetControlMode() const;
+	
 protected:
 	virtual void SetupInputComponent() override;
 
@@ -128,5 +142,6 @@ private:
 
 	float MovementScale(float LocalHeadingAngle) const;
 
+	EControlMode ControlMode;
 	float TimeSinceLastUltraHandInput;
 };

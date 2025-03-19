@@ -66,6 +66,11 @@ void AUHPlayerController::PostProcessInput(const float DeltaTime, const bool bGa
 	RotationInput.Yaw *= MovementScale(FMath::Sign(RotationInput.Yaw) * UE_PI / 2.f);
 }
 
+EControlMode AUHPlayerController::GetControlMode() const
+{
+	return ControlMode;
+}
+
 void AUHPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
@@ -120,6 +125,8 @@ void AUHPlayerController::StopJumping()
 void AUHPlayerController::UltraHandStart()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandStart"));
+
+	ControlMode = EControlMode::UltraHandPicking;
 	
 	Picker->SetPickingEnabled(true);
 	
@@ -142,6 +149,8 @@ void AUHPlayerController::UltraHandPick()
 	{
 		if (UStaticMeshComponent* const SelectedPart = Picker->GetSelectedPart())
 		{
+			ControlMode = EControlMode::UltraHandManipulation;
+			
 			FRotator NewRotation = GetControlRotation();
 			NewRotation.Yaw = (SelectedPart->GetComponentLocation() - GetPawn()->GetActorLocation()).Rotation().Yaw;
 			SetControlRotation(NewRotation);
@@ -167,6 +176,8 @@ void AUHPlayerController::UltraHandPick()
 void AUHPlayerController::UltraHandStop()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandStop"));
+
+	ControlMode = EControlMode::Regular;
 	
 	Picker->SetPickingEnabled(false);
 	
@@ -250,6 +261,8 @@ void AUHPlayerController::UltraHandLook(const FInputActionValue& Value)
 void AUHPlayerController::UltraHandTurnStart()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnStart"));
+
+	ControlMode = EControlMode::UltraHandTurning;
 	
 	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
@@ -260,6 +273,8 @@ void AUHPlayerController::UltraHandTurnStart()
 void AUHPlayerController::UltraHandTurnStop()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnStop"));
+	
+	ControlMode = EControlMode::UltraHandManipulation;
 	
 	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
