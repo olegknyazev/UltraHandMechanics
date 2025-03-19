@@ -1,7 +1,7 @@
 #include "UHBaseBlock.h"
 
 #include "UHAttachable.h"
-#include "UHBlock.h"
+#include "UHBlockHighlight.h"
 #include "UHBlockMovementComponent.h"
 
 
@@ -15,16 +15,16 @@ AUHBaseBlock::AUHBaseBlock()
 
 	MovementComponent = CreateDefaultSubobject<UUHBlockMovementComponent>(TEXT("Movement"));
 	MovementComponent->UpdatedComponent = MeshComponent;
-	MovementComponent->AddTickPrerequisiteComponent(BlockComponent);
+	MovementComponent->AddTickPrerequisiteComponent(HighlightComponent);
 	
 	AttachableComponent = CreateDefaultSubobject<UUHAttachable>(TEXT("Attachable"));
 	AttachableComponent->AttachablePrimitive = MeshComponent;
 	AttachableComponent->MovementComponent = MovementComponent;
 
-	BlockComponent = CreateDefaultSubobject<UUHBlock>(TEXT("Block"));
-	BlockComponent->SetPrimitiveComponent(MeshComponent);
-	BlockComponent->MovementComponent = MovementComponent;
-	BlockComponent->Attachable = AttachableComponent;
+	HighlightComponent = CreateDefaultSubobject<UUHBlockHighlight>(TEXT("Block"));
+	HighlightComponent->SetPrimitiveComponent(MeshComponent);
+	HighlightComponent->MovementComponent = MovementComponent;
+	HighlightComponent->Attachable = AttachableComponent;
 }
 
 void AUHBaseBlock::SetHighlightedPart(UStaticMeshComponent* Component)
@@ -35,9 +35,9 @@ void AUHBaseBlock::SetHighlightedPart(UStaticMeshComponent* Component)
 		{
 			return;
 		}
-		BlockComponent->SetPrimitiveComponent(Component);
+		HighlightComponent->SetPrimitiveComponent(Component);
 	}
-	BlockComponent->SetHighlighted(Component != nullptr);
+	HighlightComponent->SetUnderAim(Component != nullptr);
 }
 
 bool AUHBaseBlock::IsManipulated() const
@@ -62,13 +62,13 @@ void AUHBaseBlock::SetManipulated(bool bInManipulated)
 			RootPrimitive->SetPhysMaterialOverride(bManipulated ? ManipulatedPhysicalMaterial : nullptr);
 		}
 
-		BlockComponent->SetManipulated(bManipulated);
+		HighlightComponent->SetManipulated(bManipulated);
 	}
 }
 
 bool AUHBaseBlock::AnyPartHighlighted() const
 {
-	return BlockComponent->IsHighlighted();
+	return HighlightComponent->IsUnderAim();
 }
 
 void AUHBaseBlock::Reroot(USceneComponent* NewRoot)
@@ -111,7 +111,7 @@ void AUHBaseBlock::Reroot(USceneComponent* NewRoot)
 
 	MovementComponent->SetUpdatedComponent(NewRoot);
 	
-	BlockComponent->SetPrimitiveComponent(NewRootPrimitive);
+	HighlightComponent->SetPrimitiveComponent(NewRootPrimitive);
 }
 
 bool AUHBaseBlock::StartSticking()
@@ -122,7 +122,7 @@ bool AUHBaseBlock::StartSticking()
 		{
 			bManipulated = false;
 			MovementComponent->StopMovementImmediately();
-			BlockComponent->SetManipulated(false);
+			HighlightComponent->SetManipulated(false);
 		}
 		
 		return true;

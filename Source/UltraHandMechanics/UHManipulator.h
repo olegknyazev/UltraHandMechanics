@@ -6,7 +6,7 @@
 
 
 class AUHBaseBlock;
-class UUHBlock;
+class UUHBlockHighlight;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ULTRAHANDMECHANICS_API UUHManipulator : public USceneComponent

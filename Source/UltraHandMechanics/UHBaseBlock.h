@@ -5,7 +5,7 @@
 #include "UHBaseBlock.generated.h"
 
 class UUHAttachable;
-class UUHBlock;
+class UUHBlockHighlight;
 class UUHBlockMovementComponent;
 
 UCLASS()
@@ -24,7 +24,7 @@ public:
 	UUHAttachable* AttachableComponent;
 	
 	UPROPERTY(VisibleAnywhere)
-	UUHBlock* BlockComponent;
+	UUHBlockHighlight* HighlightComponent;
 
 	UPROPERTY(EditAnywhere)
 	UPhysicalMaterial* ManipulatedPhysicalMaterial;

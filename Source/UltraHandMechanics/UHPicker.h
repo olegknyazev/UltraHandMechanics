@@ -6,7 +6,7 @@
 
 
 class AUHBaseBlock;
-class UUHBlock;
+class UUHBlockHighlight;
 
 
 DECLARE_LOG_CATEGORY_EXTERN(LogUHPicker, Log, All);
