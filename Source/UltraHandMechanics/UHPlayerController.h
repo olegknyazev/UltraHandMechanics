@@ -107,8 +107,6 @@ public:
 	
 	AUHPlayerController();
 	
-	virtual void Tick(float DeltaSeconds) override;
-
 	virtual void PlayerTick(float DeltaTime) override;
 
 	virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;

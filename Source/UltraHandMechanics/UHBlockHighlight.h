@@ -34,10 +34,6 @@ public:
 	bool IsManipulated() const;
 	void SetManipulated(bool bInManipulated);
 
-	virtual void BeginPlay() override;
-
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
 private:
 	void UpdateMaterial();
 	

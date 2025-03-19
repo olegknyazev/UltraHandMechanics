@@ -7,7 +7,7 @@
 
 AUHBaseBlock::AUHBaseBlock()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	MeshComponent->SetSimulatePhysics(true);
@@ -129,16 +129,6 @@ bool AUHBaseBlock::StartSticking()
 	}
 
 	return false;
-}
-
-void AUHBaseBlock::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
-void AUHBaseBlock::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 }
 
 void AUHBaseBlock::StartAttaching(float InMaxAttachDistance)

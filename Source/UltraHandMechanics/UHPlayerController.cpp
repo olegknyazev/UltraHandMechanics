@@ -14,11 +14,6 @@ AUHPlayerController::AUHPlayerController()
 	Picker = CreateDefaultSubobject<UUHPicker>(TEXT("Picker"));
 }
 
-void AUHPlayerController::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-}
-
 void AUHPlayerController::PlayerTick(float DeltaTime)
 {
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())

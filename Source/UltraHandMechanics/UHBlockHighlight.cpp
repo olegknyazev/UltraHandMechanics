@@ -3,8 +3,7 @@
 
 UUHBlockHighlight::UUHBlockHighlight()
 {
-	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.TickGroup = TG_PrePhysics;
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
 bool UUHBlockHighlight::IsUnderAim() const
@@ -63,16 +62,6 @@ void UUHBlockHighlight::SetPrimitiveComponent(UPrimitiveComponent* InPrimitiveCo
 			}
 		}
 	}
-}
-
-void UUHBlockHighlight::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
-void UUHBlockHighlight::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
 void UUHBlockHighlight::UpdateMaterial()

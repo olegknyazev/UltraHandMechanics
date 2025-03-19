@@ -45,10 +45,6 @@ public:
 
 	bool StartSticking();
 
-	virtual void BeginPlay() override;
-
-	virtual void Tick(float DeltaTime) override;
-
 private:
 	uint8 bManipulated:1;
 };
