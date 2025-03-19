@@ -86,6 +86,20 @@ public:
 		FActorComponentTickFunction* ThisTickFunction) override;
 	
 private:
+	struct FSocketHandle
+	{
+		TObjectPtr<UUHAttachable> Attachable;
+		int32 PartIndex = -1;
+		int32 SocketIndex = -1;
+
+		bool IsSet() const;
+		void Set(UUHAttachable* InAttachable, int32 InPartIndex, int32 InSocketIndex);
+		void Reset();
+		
+		UPrimitiveComponent* GetPrimitive() const;
+		FVector GetWorldLocation() const;
+	};
+	
 	static FRotator SnappedRelativeRotation(USceneComponent* Component, USceneComponent* Space);
 
 	FRotator OurTargetRotationInWorldSpace() const;
@@ -100,8 +114,6 @@ private:
 		const FUHAttachmentPart* OtherPart,
 		TSet<const FUHAttachmentPart*>& AttachedParts,
 		uint32 OurParentPartIndex);
-	
-	void SetSimulatePhysics(bool bSimulationEnabled);
 
 	void CopyPartsFrom(
 		const UUHAttachable* Other,
@@ -109,25 +121,20 @@ private:
 		uint32 OurParentPartIndex,
 		TSet<uint32>& CopiedParts);
 	
+	UStaticMeshComponent* CopyMeshComponent(const UStaticMeshComponent* Prototype, UPrimitiveComponent* ParentComponent);
+
 	EUHAttachableState State;
 	float MaxAttachDistance;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TArray<FUHAttachmentPart> Parts;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	UUHAttachable* CurrentTarget;
 
-	UPROPERTY()
-	UPrimitiveComponent* CurrentOurPrimitive;
+	FSocketHandle CurrentOurSocketHandle;
+	FSocketHandle CurrentTheirSocketHandle;
 	
-	UPROPERTY()
-	UPrimitiveComponent* CurrentTheirPrimitive;
-	
-	int32 CurrentTheirPartIndex;
-	int32 CurrentOurPartIndex;
-	int32 CurrentTheirSocketIndex;
-	int32 CurrentOurSocketIndex;
 	float CurrentDistance;
 
 	FRotator TheirTargetRotation;
