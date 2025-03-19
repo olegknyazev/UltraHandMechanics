@@ -63,11 +63,11 @@ private:
 
 	FVector ClampOffset(const FVector& Offset) const;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	AUHBaseBlock* ManipulatedBlock;
 
-	UPROPERTY()
-	UStaticMeshComponent* ManipulatedPart;
+	UPROPERTY(Transient)
+	UStaticMeshComponent* ManipulatedBlockPart;
 	
 	FVector BlockRelativeLocation;
 	FQuat BlockRelativeCurrentRotation;

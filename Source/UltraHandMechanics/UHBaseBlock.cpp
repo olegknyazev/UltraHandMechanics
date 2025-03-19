@@ -140,3 +140,18 @@ void AUHBaseBlock::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
+
+void AUHBaseBlock::StartAttaching(float InMaxAttachDistance)
+{
+	AttachableComponent->StartAttaching(InMaxAttachDistance);
+}
+
+void AUHBaseBlock::StopAttaching()
+{
+	AttachableComponent->StopAttaching();
+}
+
+void AUHBaseBlock::Detach(USceneComponent* PartToDetach)
+{
+	AttachableComponent->Detach(PartToDetach);
+}

@@ -1,6 +1,5 @@
 #include "UHManipulator.h"
 
-#include "UHAttachable.h"
 #include "UHBaseBlock.h"
 #include "UHBlockMovementComponent.h"
 
@@ -29,12 +28,12 @@ void UUHManipulator::StartManipulation(UStaticMeshComponent* InManipulatedPart)
 {
 	StopManipulation();
 
-	ManipulatedPart = InManipulatedPart;
-	ManipulatedBlock = ManipulatedPart ? Cast<AUHBaseBlock>(ManipulatedPart->GetOwner()) : nullptr;
+	ManipulatedBlockPart = InManipulatedPart;
+	ManipulatedBlock = ManipulatedBlockPart ? Cast<AUHBaseBlock>(ManipulatedBlockPart->GetOwner()) : nullptr;
 
 	if (ManipulatedBlock)
 	{
-		ManipulatedBlock->Reroot(ManipulatedPart);
+		ManipulatedBlock->Reroot(ManipulatedBlockPart);
 		
 		const FTransform OriginTransform = GetOriginTransform();
 		BlockRelativeLocation = ClampOffset(OriginTransform.InverseTransformPosition(ManipulatedBlock->GetActorLocation()));
@@ -42,11 +41,7 @@ void UUHManipulator::StartManipulation(UStaticMeshComponent* InManipulatedPart)
 		BlockRelativeTargetRotation = SnapRotation(BlockRelativeCurrentRotation);
 
 		ManipulatedBlock->SetManipulated(true);
-
-		if (auto* const Attachable = ManipulatedBlock->FindComponentByClass<UUHAttachable>())
-		{
-			Attachable->StartAttaching(MaxAttachDistance);
-		}
+		ManipulatedBlock->StartAttaching(MaxAttachDistance);
 	}
 }
 
@@ -55,11 +50,7 @@ void UUHManipulator::StopManipulation()
 	if (ManipulatedBlock)
 	{
 		ManipulatedBlock->SetManipulated(false);
-		
-		if (auto* const Attachable = ManipulatedBlock->FindComponentByClass<UUHAttachable>())
-		{
-			Attachable->StopAttaching();
-		}
+		ManipulatedBlock->StopAttaching();
 	}
 	
 	ManipulatedBlock = nullptr;
@@ -116,7 +107,7 @@ bool UUHManipulator::StartSticking()
 		if (ManipulatedBlock->StartSticking())
 		{
 			ManipulatedBlock = nullptr;
-			ManipulatedPart = nullptr;
+			ManipulatedBlockPart = nullptr;
 			return true;
 		}
 	}
@@ -128,11 +119,7 @@ void UUHManipulator::Detach()
 {
 	if (ManipulatedBlock)
 	{
-		if (auto* const Attachable = ManipulatedBlock->FindComponentByClass<UUHAttachable>())
-		{
-			Attachable->Detach(ManipulatedPart);
-		}
-
+		ManipulatedBlock->Detach(ManipulatedBlockPart);
 		ManipulatedBlock->SetManipulated(false);
 	}
 }

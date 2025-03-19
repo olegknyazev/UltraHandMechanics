@@ -37,6 +37,10 @@ public:
 	bool IsManipulated() const;
 	void SetManipulated(bool bInManipulated);
 
+	void StartAttaching(float InMaxAttachDistance);
+	void StopAttaching();
+	void Detach(USceneComponent* PartToDetach);
+	
 	void Reroot(USceneComponent* NewRoot);
 
 	bool StartSticking();
