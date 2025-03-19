@@ -40,6 +40,32 @@ void AUHBaseBlock::SetHighlightedPart(UStaticMeshComponent* Component)
 	BlockComponent->SetHighlighted(Component != nullptr);
 }
 
+bool AUHBaseBlock::IsManipulated() const
+{
+	return bManipulated;
+}
+
+void AUHBaseBlock::SetManipulated(bool bInManipulated)
+{
+	if (bManipulated != bInManipulated)
+	{
+		bManipulated = bInManipulated;
+		
+		if (!bManipulated)
+		{
+			MovementComponent->StopMovementImmediately();
+		}
+
+		if (auto* RootPrimitive = Cast<UPrimitiveComponent>(RootComponent))
+		{
+			RootPrimitive->SetEnableGravity(!bManipulated);
+			RootPrimitive->SetPhysMaterialOverride(bManipulated ? ManipulatedPhysicalMaterial : nullptr);
+		}
+
+		BlockComponent->SetManipulated(bManipulated);
+	}
+}
+
 bool AUHBaseBlock::AnyPartHighlighted() const
 {
 	return BlockComponent->IsHighlighted();
@@ -63,6 +89,11 @@ void AUHBaseBlock::Reroot(USceneComponent* NewRoot)
 		return;
 	}
 	
+	if (!ensure(!bManipulated))
+	{
+		return;
+	}
+	
 	auto* const OldRootPrimitive = Cast<UPrimitiveComponent>(GetRootComponent());
 	check(OldRootPrimitive);
 	
@@ -76,10 +107,28 @@ void AUHBaseBlock::Reroot(USceneComponent* NewRoot)
 	SetRootComponent(NewRoot);
 	OldRootPrimitive->AttachToComponent(NewRoot, FAttachmentTransformRules::KeepWorldTransform);
 	OldRootPrimitive->WeldTo(NewRoot);
+	NewRootPrimitive->SetSimulatePhysics(true);
 
 	MovementComponent->SetUpdatedComponent(NewRoot);
 	
 	BlockComponent->SetPrimitiveComponent(NewRootPrimitive);
+}
+
+bool AUHBaseBlock::StartSticking()
+{
+	if (AttachableComponent->StartSticking())
+	{
+		if (bManipulated)
+		{
+			bManipulated = false;
+			MovementComponent->StopMovementImmediately();
+			BlockComponent->SetManipulated(false);
+		}
+		
+		return true;
+	}
+
+	return false;
 }
 
 void AUHBaseBlock::BeginPlay()

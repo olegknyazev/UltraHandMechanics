@@ -31,10 +31,10 @@ void UUHBlockMovementComponent::TickComponent(
 	{
 		const FVector TargetLinearVelocity = Velocity;
 		const FVector LinearVelocityChange = TargetLinearVelocity - UpdatedPrimitive->GetPhysicsLinearVelocity();
-		const FVector LinearAccelerationChange = LinearVelocityChange * 20.f;
+		const FVector LinearAccelerationChange = LinearVelocityChange * 40.f;
 		const FVector ClampedLinearAccelerationChange =
 			MaxLinearForce > 0.f
-				? LinearAccelerationChange.GetClampedToMaxSize( MaxLinearForce)
+				? LinearAccelerationChange.GetClampedToMaxSize(MaxLinearForce)
 				: LinearAccelerationChange;
 
 		UpdatedPrimitive->AddForce(ClampedLinearAccelerationChange, NAME_None, true);

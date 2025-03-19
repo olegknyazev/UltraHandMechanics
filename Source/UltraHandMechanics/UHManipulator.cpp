@@ -2,7 +2,6 @@
 
 #include "UHAttachable.h"
 #include "UHBaseBlock.h"
-#include "UHBlock.h"
 #include "UHBlockMovementComponent.h"
 
 
@@ -31,20 +30,20 @@ void UUHManipulator::StartManipulation(UStaticMeshComponent* InManipulatedPart)
 	StopManipulation();
 
 	ManipulatedPart = InManipulatedPart;
-	ManipulatedBlock = ManipulatedPart ? ManipulatedPart->GetOwner()->FindComponentByClass<UUHBlock>() : nullptr;
+	ManipulatedBlock = ManipulatedPart ? Cast<AUHBaseBlock>(ManipulatedPart->GetOwner()) : nullptr;
 
 	if (ManipulatedBlock)
 	{
-		Cast<AUHBaseBlock>(ManipulatedBlock->GetOwner())->Reroot(ManipulatedPart);
+		ManipulatedBlock->Reroot(ManipulatedPart);
 		
 		const FTransform OriginTransform = GetOriginTransform();
-		BlockRelativeLocation = ClampOffset(OriginTransform.InverseTransformPosition(ManipulatedBlock->GetBlockLocation()));
-		BlockRelativeCurrentRotation = OriginTransform.InverseTransformRotation(ManipulatedBlock->GetBlockRotation().Quaternion());
+		BlockRelativeLocation = ClampOffset(OriginTransform.InverseTransformPosition(ManipulatedBlock->GetActorLocation()));
+		BlockRelativeCurrentRotation = OriginTransform.InverseTransformRotation(ManipulatedBlock->GetActorRotation().Quaternion());
 		BlockRelativeTargetRotation = SnapRotation(BlockRelativeCurrentRotation);
 
 		ManipulatedBlock->SetManipulated(true);
 
-		if (auto* const Attachable = ManipulatedBlock->GetOwner()->FindComponentByClass<UUHAttachable>())
+		if (auto* const Attachable = ManipulatedBlock->FindComponentByClass<UUHAttachable>())
 		{
 			Attachable->StartAttaching(MaxAttachDistance);
 		}
@@ -57,7 +56,7 @@ void UUHManipulator::StopManipulation()
 	{
 		ManipulatedBlock->SetManipulated(false);
 		
-		if (auto* const Attachable = ManipulatedBlock->GetOwner()->FindComponentByClass<UUHAttachable>())
+		if (auto* const Attachable = ManipulatedBlock->FindComponentByClass<UUHAttachable>())
 		{
 			Attachable->StopAttaching();
 		}
@@ -117,6 +116,7 @@ bool UUHManipulator::StartSticking()
 		if (ManipulatedBlock->StartSticking())
 		{
 			ManipulatedBlock = nullptr;
+			ManipulatedPart = nullptr;
 			return true;
 		}
 	}
@@ -128,7 +128,7 @@ void UUHManipulator::Detach()
 {
 	if (ManipulatedBlock)
 	{
-		if (auto* const Attachable = ManipulatedBlock->GetOwner()->FindComponentByClass<UUHAttachable>())
+		if (auto* const Attachable = ManipulatedBlock->FindComponentByClass<UUHAttachable>())
 		{
 			Attachable->Detach(ManipulatedPart);
 		}
@@ -139,7 +139,7 @@ void UUHManipulator::Detach()
 
 FVector UUHManipulator::GetOffset() const
 {
-	return ManipulatedBlock ? GetOriginTransform().InverseTransformPosition(ManipulatedBlock->GetBlockLocation()) : FVector::Zero();
+	return ManipulatedBlock ? GetOriginTransform().InverseTransformPosition(ManipulatedBlock->GetActorLocation()) : FVector::Zero();
 }
 
 FVector UUHManipulator::GetError() const
@@ -166,11 +166,11 @@ void UUHManipulator::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 		
 		if (TargetApproachTime > 0.f)
 		{
-			const FVector TargetLinearVelocity = (TargetLocation - ManipulatedBlock->GetBlockLocation()) / TargetApproachTime;
+			const FVector TargetLinearVelocity = (TargetLocation - ManipulatedBlock->GetActorLocation()) / TargetApproachTime;
 
 			ManipulatedBlock->MovementComponent->Velocity = TargetLinearVelocity;
 
-			const FQuat CurrentRotation = ManipulatedBlock->GetBlockRotation().Quaternion();
+			const FQuat CurrentRotation = ManipulatedBlock->GetActorRotation().Quaternion();
 			FQuat AlignedTargetRotation = TargetRotation;
 			AlignedTargetRotation.EnforceShortestArcWith(CurrentRotation);
 			const FVector TargetAngularVelocity = (AlignedTargetRotation * CurrentRotation.Inverse()).ToRotationVector() / TargetApproachTime;
@@ -183,8 +183,8 @@ void UUHManipulator::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 			DrawDebugSphere(GetWorld(), TargetLocation, 25.f, 16, FColor::Emerald);
 			DrawDebugLine(GetWorld(), GetOwner()->GetActorLocation(), TargetLocation, FColor::Emerald);
 
-			DrawDebugSphere(GetWorld(), ManipulatedBlock->GetBlockLocation(), 10.f, 12, FColor::Red);
-			DrawDebugLine(GetWorld(), ManipulatedBlock->GetBlockLocation(), TargetLocation, FColor::Red);
+			DrawDebugSphere(GetWorld(), ManipulatedBlock->GetActorLocation(), 10.f, 12, FColor::Red);
+			DrawDebugLine(GetWorld(), ManipulatedBlock->GetActorLocation(), TargetLocation, FColor::Red);
 		}
 	}
 }

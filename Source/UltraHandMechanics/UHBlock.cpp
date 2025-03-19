@@ -1,8 +1,5 @@
 #include "UHBlock.h"
 
-#include "UHAttachable.h"
-#include "UHBlockMovementComponent.h"
-#include "GameFramework/MovementComponent.h"
 
 UUHBlock::UUHBlock()
 {
@@ -37,14 +34,6 @@ void UUHBlock::SetManipulated(bool bInManipulated)
 		bManipulated = bInManipulated;
 		
 		UpdateMaterial();
-		
-		if (!bManipulated && MovementComponent)
-		{
-			MovementComponent->StopMovementImmediately();
-		}
-
-		PrimitiveComponent->SetEnableGravity(!bManipulated);
-		PrimitiveComponent->SetPhysMaterialOverride(bManipulated ? ManipulatedPhysicalMaterial : nullptr);
 	}
 }
 
@@ -74,39 +63,6 @@ void UUHBlock::SetPrimitiveComponent(UPrimitiveComponent* InPrimitiveComponent)
 			}
 		}
 	}
-}
-
-FVector UUHBlock::GetBlockLocation() const
-{
-	return PrimitiveComponent->GetComponentLocation();
-}
-
-FRotator UUHBlock::GetBlockRotation() const
-{
-	return PrimitiveComponent->GetComponentRotation();
-}
-
-bool UUHBlock::StartSticking()
-{
-	if (Attachable)
-	{
-		if (Attachable->StartSticking())
-		{
-			if (bManipulated)
-			{
-				bManipulated = false;
-				if (MovementComponent)
-				{
-					MovementComponent->StopMovementImmediately();
-				}
-				UpdateMaterial();
-			}
-			
-			return true;
-		}
-	}
-
-	return false;
 }
 
 void UUHBlock::BeginPlay()

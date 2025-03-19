@@ -67,7 +67,8 @@ bool UUHAttachable::StartSticking()
 		{
 			return false;
 		}
-		
+
+		OurBlock->SetManipulated(false);
 		OurBlock->Reroot(CurrentOurPrimitive);
 		
 		State = EUHAttachableState::Sticking;
@@ -237,8 +238,10 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		const FVector TheirDelta = (TheirTargetRotationInWorldSpace() - CurrentTheirPrimitive->GetComponentRotation()).GetNormalized().Quaternion().ToRotationVector();
 		CurrentTarget->MovementComponent->AngularVelocity = TheirDelta * RotationSpeed;
 
-		MovementComponent->Velocity = (TheirSocketLocation - OurSocketLocation) * MovementSpeed;
-		CurrentTarget->MovementComponent->Velocity = (OurSocketLocation - TheirSocketLocation) * MovementSpeed;
+		const FVector Delta = TheirSocketLocation - OurSocketLocation;
+		const FVector Velocity = Delta.GetSafeNormal() * (FMath::Sqrt(FMath::Clamp(Delta.Size() / 100.f, 0.f, 1.f)) * 0.5f + 0.5f) * MovementSpeed;
+		MovementComponent->Velocity = Velocity;
+		CurrentTarget->MovementComponent->Velocity = -Velocity;
 
 		const float NewRemainingDistance = FVector::Distance(TheirSocketLocation, OurSocketLocation);
 		const float NewRemainingAngle = OurDelta.Size();

@@ -5,6 +5,7 @@
 #include "UHManipulator.generated.h"
 
 
+class AUHBaseBlock;
 class UUHBlock;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -63,7 +64,7 @@ private:
 	FVector ClampOffset(const FVector& Offset) const;
 
 	UPROPERTY()
-	UUHBlock* ManipulatedBlock;
+	AUHBaseBlock* ManipulatedBlock;
 
 	UPROPERTY()
 	UStaticMeshComponent* ManipulatedPart;

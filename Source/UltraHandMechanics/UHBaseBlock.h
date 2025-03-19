@@ -26,14 +26,25 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	UUHBlock* BlockComponent;
 
+	UPROPERTY(EditAnywhere)
+	UPhysicalMaterial* ManipulatedPhysicalMaterial;
+	
 	AUHBaseBlock();
 
-	void SetHighlightedPart(UStaticMeshComponent* Component);
 	bool AnyPartHighlighted() const;
+	void SetHighlightedPart(UStaticMeshComponent* Component);
+
+	bool IsManipulated() const;
+	void SetManipulated(bool bInManipulated);
 
 	void Reroot(USceneComponent* NewRoot);
+
+	bool StartSticking();
 
 	virtual void BeginPlay() override;
 
 	virtual void Tick(float DeltaTime) override;
+
+private:
+	uint8 bManipulated:1;
 };

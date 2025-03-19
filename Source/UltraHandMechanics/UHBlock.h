@@ -37,11 +37,6 @@ public:
 	bool IsManipulated() const;
 	void SetManipulated(bool bInManipulated);
 
-	FVector GetBlockLocation() const;
-	FRotator GetBlockRotation() const;
-
-	bool StartSticking();
-
 	virtual void BeginPlay() override;
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
