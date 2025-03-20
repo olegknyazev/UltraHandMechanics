@@ -93,9 +93,8 @@ bool UUHAttachable::IsStickInProgress() const
 
 bool UUHAttachable::StartSticking()
 {
-	if (IsAttachInProgress() && CurrentTarget && CurrentDistance < MaxAttachDistance && MovementComponent)
+	if (IsAttachInProgress() && CurrentTheirSocketHandle.IsSet() && CurrentDistance < MaxAttachDistance && MovementComponent)
 	{
-		ensure(CurrentTheirSocketHandle.IsSet());
 		ensure(CurrentOurSocketHandle.IsSet());
 
 		auto* OurBlock = Cast<AUHBaseBlock>(CurrentOurSocketHandle.GetPrimitive()->GetOwner());
@@ -247,10 +246,9 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 
 		if (AttachableCVars::DebugDrawSticking.GetValueOnGameThread())
 		{
-			if (CurrentTarget != nullptr)
+			if (CurrentTheirSocketHandle.IsSet())
 			{
 				ensure(CurrentOurSocketHandle.IsSet());
-				ensure(CurrentTheirSocketHandle.IsSet());
 				
 				DrawDebugLine(
 					GetWorld(),
@@ -287,15 +285,15 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		
 		const FQuat TheirCurrentRotation = CurrentTheirSocketHandle.GetPrimitive()->GetComponentRotation().Quaternion();
 		FQuat TheirDeltaQuat = (TheirTargetRotationInWorldSpace().Quaternion() * TheirCurrentRotation.Inverse());
-		TheirDeltaQuat.EnforceShortestArcWith(FQuat::MakeFromRotationVector(CurrentTarget->MovementComponent->AngularVelocity));
+		TheirDeltaQuat.EnforceShortestArcWith(FQuat::MakeFromRotationVector(CurrentTheirSocketHandle.Attachable->MovementComponent->AngularVelocity));
 		const FVector TheirDelta = TheirDeltaQuat.ToRotationVector();
 		const FVector TheirVelocity = TheirDelta.GetSafeNormal() * (FMath::Sqrt(FMath::Clamp(TheirDelta.Size() / 100.f, 0.f, 1.f)) * 0.5f + 0.5f) * RotationSpeed;
-		CurrentTarget->MovementComponent->AngularVelocity = TheirVelocity;
+		CurrentTheirSocketHandle.Attachable->MovementComponent->AngularVelocity = TheirVelocity;
 
 		const FVector Delta = TheirSocketLocation - OurSocketLocation;
 		const FVector Velocity = Delta.GetSafeNormal() * (FMath::Sqrt(FMath::Clamp(Delta.Size() / 100.f, 0.f, 1.f)) * 0.5f + 0.5f) * MovementSpeed;
 		MovementComponent->Velocity = Velocity;
-		CurrentTarget->MovementComponent->Velocity = -Velocity;
+		CurrentTheirSocketHandle.Attachable->MovementComponent->Velocity = -Velocity;
 
 		const float NewRemainingDistance = FVector::Distance(TheirSocketLocation, OurSocketLocation);
 		const float NewRemainingAngle = OurDelta.Size();
@@ -304,7 +302,7 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		{
 			UE_LOG(LogUHAttachable, Display, TEXT("Sticking complete"));
 
-			Attach(CurrentTarget);
+			Attach(CurrentTheirSocketHandle.Attachable);
 			StopAttaching();
 		}
 		else if ((RemainingDistance > 0.f && FMath::Abs(NewRemainingDistance - RemainingDistance) < UE_KINDA_SMALL_NUMBER) &&
@@ -369,7 +367,6 @@ void UUHAttachable::UpdateCurrentTarget()
 
 	CurrentOurSocketHandle.Reset();
 	CurrentTheirSocketHandle.Reset();
-	CurrentTarget = nullptr;
 	CurrentDistance = std::numeric_limits<float>::max();
 
 	for (const FOverlapResult& Overlap : Overlaps)
@@ -398,7 +395,6 @@ void UUHAttachable::UpdateCurrentTarget()
 								CurrentDistance = Distance;
 								CurrentOurSocketHandle.Set(this, OPI, OSI);
 								CurrentTheirSocketHandle.Set(OtherAttachable, TPI, TSI);
-								CurrentTarget = OtherAttachable;
 							}
 						}
 					}
@@ -413,11 +409,10 @@ void UUHAttachable::StopSticking()
 	if (IsStickInProgress())
 	{
 		MovementComponent->StopMovementImmediately();
-		CurrentTarget->MovementComponent->StopMovementImmediately();
+		CurrentTheirSocketHandle.Attachable->MovementComponent->StopMovementImmediately();
 
 		CurrentOurSocketHandle.Reset();
 		CurrentTheirSocketHandle.Reset();
-		CurrentTarget = nullptr;
 		CurrentDistance = 0.f;
 		TheirTargetRotation = FRotator::ZeroRotator;
 		OurTargetRotation = FRotator::ZeroRotator;

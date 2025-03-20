@@ -129,9 +129,6 @@ private:
 	UPROPERTY(Transient)
 	TArray<FUHAttachmentPart> Parts;
 
-	UPROPERTY(Transient)
-	UUHAttachable* CurrentTarget;
-
 	FSocketHandle CurrentOurSocketHandle;
 	FSocketHandle CurrentTheirSocketHandle;
 	
