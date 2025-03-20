@@ -106,7 +106,7 @@ bool UUHAttachable::StartSticking()
 
 		OurBlock->SetManipulated(false);
 		OurBlock->Reroot(CurrentOurSocketHandle.GetPrimitive());
-		
+
 		State = EUHAttachableState::Sticking;
 		OurTargetRotation = SnappedRelativeRotation(CurrentOurSocketHandle.GetPrimitive(), CurrentTheirSocketHandle.GetPrimitive());
 		TheirTargetRotation = SnappedRelativeRotation(CurrentTheirSocketHandle.GetPrimitive(), CurrentOurSocketHandle.GetPrimitive());
@@ -278,11 +278,19 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 				FColor::Red);
 		}
 
-		const FVector OurDelta = (OurTargetRotationInWorldSpace() - CurrentOurSocketHandle.GetPrimitive()->GetComponentRotation()).GetNormalized().Quaternion().ToRotationVector();
-		MovementComponent->AngularVelocity = OurDelta * RotationSpeed;
+		const FQuat OurCurrentRotation = CurrentOurSocketHandle.GetPrimitive()->GetComponentRotation().Quaternion();
+		FQuat OurDeltaQuat = (OurTargetRotationInWorldSpace().Quaternion() * OurCurrentRotation.Inverse());
+		OurDeltaQuat.EnforceShortestArcWith(FQuat::MakeFromRotationVector(MovementComponent->AngularVelocity));
+		const FVector OurDelta = OurDeltaQuat.ToRotationVector();
+		const FVector OurVelocity = OurDelta.GetSafeNormal() * (FMath::Sqrt(FMath::Clamp(OurDelta.Size() / 10.f, 0.f, 1.f)) * 0.7f + 0.3f) * RotationSpeed;
+		MovementComponent->AngularVelocity = OurVelocity;
 		
-		const FVector TheirDelta = (TheirTargetRotationInWorldSpace() - CurrentTheirSocketHandle.GetPrimitive()->GetComponentRotation()).GetNormalized().Quaternion().ToRotationVector();
-		CurrentTarget->MovementComponent->AngularVelocity = TheirDelta * RotationSpeed;
+		const FQuat TheirCurrentRotation = CurrentTheirSocketHandle.GetPrimitive()->GetComponentRotation().Quaternion();
+		FQuat TheirDeltaQuat = (TheirTargetRotationInWorldSpace().Quaternion() * TheirCurrentRotation.Inverse());
+		TheirDeltaQuat.EnforceShortestArcWith(FQuat::MakeFromRotationVector(CurrentTarget->MovementComponent->AngularVelocity));
+		const FVector TheirDelta = TheirDeltaQuat.ToRotationVector();
+		const FVector TheirVelocity = TheirDelta.GetSafeNormal() * (FMath::Sqrt(FMath::Clamp(TheirDelta.Size() / 100.f, 0.f, 1.f)) * 0.5f + 0.5f) * RotationSpeed;
+		CurrentTarget->MovementComponent->AngularVelocity = TheirVelocity;
 
 		const FVector Delta = TheirSocketLocation - OurSocketLocation;
 		const FVector Velocity = Delta.GetSafeNormal() * (FMath::Sqrt(FMath::Clamp(Delta.Size() / 100.f, 0.f, 1.f)) * 0.5f + 0.5f) * MovementSpeed;
