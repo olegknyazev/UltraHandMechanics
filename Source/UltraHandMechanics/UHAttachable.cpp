@@ -243,20 +243,6 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 	if (IsAttachInProgress())
 	{
 		UpdateCurrentTarget();
-
-		if (AttachableCVars::DebugDrawSticking.GetValueOnGameThread())
-		{
-			if (CurrentTheirSocketHandle.IsSet())
-			{
-				ensure(CurrentOurSocketHandle.IsSet());
-				
-				DrawDebugLine(
-					GetWorld(),
-					CurrentOurSocketHandle.GetWorldLocation(),
-					CurrentTheirSocketHandle.GetWorldLocation(),
-					FColor::Cyan);
-			}
-		}
 	}
 
 	if (IsStickInProgress())
@@ -365,6 +351,15 @@ void UUHAttachable::UpdateCurrentTarget()
 		Overlaps.Append(OverlapsLocal);
 	}
 
+	struct FAttachmentOption
+	{
+		FSocketHandle OurSocket;
+		FSocketHandle TheirSocket;
+		float Distance;
+	};
+
+	TArray<FAttachmentOption> Options; 
+
 	CurrentOurSocketHandle.Reset();
 	CurrentTheirSocketHandle.Reset();
 	CurrentDistance = std::numeric_limits<float>::max();
@@ -390,16 +385,46 @@ void UUHAttachable::UpdateCurrentTarget()
 							const FVector OurSocketLocation = OurPart.PrimitiveComponent->GetComponentTransform().TransformPosition(OurSocket.Location);
 							const float Distance = FVector::Distance(TheirSocketLocation, OurSocketLocation);
 
-							if (Distance < CurrentDistance)
-							{
-								CurrentDistance = Distance;
-								CurrentOurSocketHandle.Set(this, OPI, OSI);
-								CurrentTheirSocketHandle.Set(OtherAttachable, TPI, TSI);
-							}
+							Options.Emplace(FSocketHandle{this, OPI, OSI}, FSocketHandle{OtherAttachable, TPI, TSI}, Distance);
 						}
 					}
 				}
 			}
+		}
+	}
+	
+	Algo::SortBy(Options, [](const FAttachmentOption& Option) { return Option.Distance; });
+
+	FCollisionQueryParams QueryParams2;
+	QueryParams2.bFindInitialOverlaps = false;
+
+	for (const FAttachmentOption& Option : Options)
+	{
+		if (Option.Distance > MaxAttachDistance)
+		{
+			break;
+		}
+		
+		const FVector OurSocketLocation = Option.OurSocket.GetWorldLocation();
+		const FVector To = Option.TheirSocket.GetWorldLocation();
+		const FVector From = OurSocketLocation + (To - OurSocketLocation).GetClampedToMaxSize(0.1f);
+
+		FHitResult Hit;
+		GetWorld()->LineTraceSingleByChannel(Hit, From, To, ECC_Visibility, QueryParams2);
+
+		const bool bTraceSuccessful = !Hit.bBlockingHit || Hit.Time > 0.99f;
+
+		if (AttachableCVars::DebugDrawSticking.GetValueOnGameThread())
+		{
+			DrawDebugLine(GetWorld(), Hit.TraceStart, Hit.bBlockingHit ? Hit.Location : Hit.TraceEnd, bTraceSuccessful ? FColor::Green : FColor::Red);
+		}
+		
+		if (bTraceSuccessful)
+		{
+			CurrentDistance = Option.Distance;
+			CurrentOurSocketHandle = Option.OurSocket;
+			CurrentTheirSocketHandle = Option.TheirSocket;
+			break;
 		}
 	}
 }
