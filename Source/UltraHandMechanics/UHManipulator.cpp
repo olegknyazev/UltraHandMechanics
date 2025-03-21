@@ -120,7 +120,6 @@ void UUHManipulator::Detach()
 	if (ManipulatedBlock)
 	{
 		ManipulatedBlock->Detach(ManipulatedBlockPart);
-		ManipulatedBlock->SetManipulated(false);
 	}
 }
 

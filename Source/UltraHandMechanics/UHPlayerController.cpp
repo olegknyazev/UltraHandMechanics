@@ -337,8 +337,6 @@ void AUHPlayerController::UltraHandDetach()
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{
 		Manipulator->Detach();
-		
-		UltraHandStop();
 	}
 }
 
