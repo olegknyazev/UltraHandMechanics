@@ -24,7 +24,7 @@ bool UUHManipulator::IsManipulating() const
 	return ManipulatedBlock != nullptr;
 }
 
-void UUHManipulator::StartManipulation(UStaticMeshComponent* InManipulatedPart)
+void UUHManipulator::StartManipulation(UPrimitiveComponent* InManipulatedPart)
 {
 	StopManipulation();
 

@@ -7,6 +7,7 @@
 
 class AUHBaseBlock;
 class UUHBlockHighlight;
+class UPrimitiveComponent;
 
 
 DECLARE_LOG_CATEGORY_EXTERN(LogUHPicker, Log, All);
@@ -24,27 +25,25 @@ public:
 	UUHPicker();
 
 	AUHBaseBlock* GetSelectedBlock() const;
-	UStaticMeshComponent* GetSelectedPart() const;
+	UPrimitiveComponent* GetSelectedBlockPart() const;
 	
 	void SetPickingEnabled(bool bInEnabled);
 	bool IsPickingEnabled() const;
 	
-	virtual void BeginPlay() override;
-
 	virtual void TickComponent(
 		float DeltaTime,
 		ELevelTick TickType,
 		FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
-	void SetSelectedPart(UStaticMeshComponent* Part);
-	UStaticMeshComponent* TraceMeshUnderAim() const;
+	void SetSelectedPart(UPrimitiveComponent* Part);
+	UPrimitiveComponent* TraceMeshUnderAim() const;
 
 	bool bPickingEnabled;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	AUHBaseBlock* SelectedBlock;
 	
-	UPROPERTY()
-	UStaticMeshComponent* SelectedMesh;
+	UPROPERTY(Transient)
+	UPrimitiveComponent* SelectedBlockPart;
 };

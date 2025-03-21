@@ -7,6 +7,7 @@
 class UUHAttachable;
 class UUHBlockHighlight;
 class UUHBlockMovementComponent;
+class UPrimitiveComponent;
 
 UCLASS()
 class ULTRAHANDMECHANICS_API AUHBaseBlock : public AActor
@@ -32,7 +33,7 @@ public:
 	AUHBaseBlock();
 
 	bool AnyPartHighlighted() const;
-	void SetHighlightedPart(UStaticMeshComponent* Component);
+	void SetHighlightedPart(UPrimitiveComponent* Component);
 
 	bool IsManipulated() const;
 	void SetManipulated(bool bInManipulated);

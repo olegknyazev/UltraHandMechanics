@@ -16,9 +16,9 @@ AUHBaseBlock* UUHPicker::GetSelectedBlock() const
 	return SelectedBlock;
 }
 
-UStaticMeshComponent* UUHPicker::GetSelectedPart() const
+UPrimitiveComponent* UUHPicker::GetSelectedBlockPart() const
 {
-	return SelectedMesh;
+	return SelectedBlockPart;
 }
 
 void UUHPicker::SetPickingEnabled(bool bInEnabled)
@@ -36,11 +36,6 @@ bool UUHPicker::IsPickingEnabled() const
 	return bPickingEnabled;
 }
 
-void UUHPicker::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
 void UUHPicker::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -51,7 +46,7 @@ void UUHPicker::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 	}
 }
 
-void UUHPicker::SetSelectedPart(UStaticMeshComponent* Part)
+void UUHPicker::SetSelectedPart(UPrimitiveComponent* Part)
 {
 	auto* const Block = Part ? Cast<AUHBaseBlock>(Part->GetOwner()) : nullptr;
 	auto* const PartToSelect = Block ? Part : nullptr;
@@ -68,22 +63,22 @@ void UUHPicker::SetSelectedPart(UStaticMeshComponent* Part)
 		bBlockChanged = true;
 	}
 
-	if (bBlockChanged || SelectedMesh != PartToSelect)
+	if (bBlockChanged || SelectedBlockPart != PartToSelect)
 	{
 		if (SelectedBlock)
 		{
 			SelectedBlock->SetHighlightedPart(PartToSelect);
 		}
 		
-		SelectedMesh = PartToSelect;
+		SelectedBlockPart = PartToSelect;
 
 		UE_LOG(LogUHPicker, Display, TEXT("Selected block is now %s (%s)"),
         	SelectedBlock ? *SelectedBlock->GetName() : TEXT("None"),
-        	SelectedMesh ? *SelectedMesh->GetName() : TEXT("None"));
+        	SelectedBlockPart ? *SelectedBlockPart->GetName() : TEXT("None"));
 	}
 }
 
-UStaticMeshComponent* UUHPicker::TraceMeshUnderAim() const
+UPrimitiveComponent* UUHPicker::TraceMeshUnderAim() const
 {
 	auto* const PlayerController = Cast<APlayerController>(GetOwner());
 	if (!PlayerController)
@@ -112,5 +107,5 @@ UStaticMeshComponent* UUHPicker::TraceMeshUnderAim() const
 		return nullptr;
 	}
 
-	return Cast<UStaticMeshComponent>(Hit.GetComponent());
+	return Cast<UPrimitiveComponent>(Hit.GetComponent());
 }

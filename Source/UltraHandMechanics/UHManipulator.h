@@ -7,6 +7,7 @@
 
 class AUHBaseBlock;
 class UUHBlockHighlight;
+class UPrimitiveComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ULTRAHANDMECHANICS_API UUHManipulator : public USceneComponent
@@ -35,7 +36,7 @@ public:
 	UUHManipulator();
 
 	bool IsManipulating() const;
-	void StartManipulation(UStaticMeshComponent* InManipulatedPart);
+	void StartManipulation(UPrimitiveComponent* InManipulatedPart);
 	void StopManipulation();
 	
 	void MoveRelative(const FVector& Offset);
@@ -67,7 +68,7 @@ private:
 	AUHBaseBlock* ManipulatedBlock;
 
 	UPROPERTY(Transient)
-	UStaticMeshComponent* ManipulatedBlockPart;
+	UPrimitiveComponent* ManipulatedBlockPart;
 	
 	FVector BlockRelativeLocation;
 	FQuat BlockRelativeCurrentRotation;

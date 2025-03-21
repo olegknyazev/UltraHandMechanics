@@ -145,7 +145,7 @@ void AUHPlayerController::UltraHandPick()
 	
 	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
 	{
-		if (UStaticMeshComponent* const SelectedPart = Picker->GetSelectedPart())
+		if (UPrimitiveComponent* const SelectedPart = Picker->GetSelectedBlockPart())
 		{
 			ControlMode = EControlMode::UltraHandManipulation;
 			

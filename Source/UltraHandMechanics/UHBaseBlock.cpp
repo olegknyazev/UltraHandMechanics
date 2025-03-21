@@ -27,7 +27,7 @@ AUHBaseBlock::AUHBaseBlock()
 	HighlightComponent->Attachable = AttachableComponent;
 }
 
-void AUHBaseBlock::SetHighlightedPart(UStaticMeshComponent* Component)
+void AUHBaseBlock::SetHighlightedPart(UPrimitiveComponent* Component)
 {
 	if (Component)
 	{
