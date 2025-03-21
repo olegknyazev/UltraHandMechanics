@@ -16,10 +16,16 @@ namespace AttachableCVars
 		TEXT("Defines whether the sockets debug visualization is enabled."),
 		ECVF_Default);
 	
-	static TAutoConsoleVariable<bool> DebugDrawSticking(
-		TEXT("uh.DebugDrawSticking"),
+	static TAutoConsoleVariable<bool> DebugDrawAttachment(
+		TEXT("uh.DebugDrawAttachment"),
 		true,
-		TEXT("Defines whether the sticking process debug visualization is enabled."),
+		TEXT("Defines whether the attachment process debug visualization is enabled."),
+		ECVF_Default);
+	
+	static TAutoConsoleVariable<bool> DebugDrawAttachmentTraces(
+		TEXT("uh.DebugDrawAttachmentTraces"),
+		false,
+		TEXT("Defines whether the traces made in the attachment process are visualized."),
 		ECVF_Default);
 }
 
@@ -77,6 +83,9 @@ void UUHAttachable::StartAttaching(float InMaxAttachDistance)
 	{
 		State = EUHAttachableState::Attaching;
 		MaxAttachDistance = InMaxAttachDistance;
+		CurrentOurSocketHandle.Reset();
+		CurrentTheirSocketHandle.Reset();
+		CurrentDistance = std::numeric_limits<float>::max();
 	}
 }
 
@@ -243,6 +252,20 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 	if (IsAttachInProgress())
 	{
 		UpdateCurrentTarget();
+		
+		if (AttachableCVars::DebugDrawAttachment.GetValueOnGameThread())
+		{
+			if (CurrentTheirSocketHandle.IsSet())
+			{
+				ensure(CurrentOurSocketHandle.IsSet());
+				
+				DrawDebugLine(
+					GetWorld(),
+					CurrentOurSocketHandle.GetWorldLocation(),
+					CurrentTheirSocketHandle.GetWorldLocation(),
+					FColor::Cyan);
+			}
+		}
 	}
 
 	if (IsStickInProgress())
@@ -253,7 +276,7 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		const FVector OurSocketLocation = CurrentOurSocketHandle.GetWorldLocation();
 		const FVector TheirSocketLocation = CurrentTheirSocketHandle.GetWorldLocation();
 
-		if (AttachableCVars::DebugDrawSticking.GetValueOnGameThread())
+		if (AttachableCVars::DebugDrawAttachment.GetValueOnGameThread())
 		{
 			DrawDebugLine(
 				GetWorld(),
@@ -335,7 +358,7 @@ void UUHAttachable::UpdateCurrentTarget()
 		const FCollisionShape InflatedShape = Part.PrimitiveComponent->GetCollisionShape(MaxAttachDistance);
 		const FVector ShapeLocation = Part.PrimitiveComponent->GetComponentLocation();
 		
-		if (AttachableCVars::DebugDrawSticking.GetValueOnGameThread())
+		if (AttachableCVars::DebugDrawAttachmentTraces.GetValueOnGameThread())
 		{
 			DrawDebugCollisionShape(GetWorld(), InflatedShape, ShapeLocation, FQuat::Identity, FColor::Orange);
 		}
@@ -358,11 +381,12 @@ void UUHAttachable::UpdateCurrentTarget()
 		float Distance;
 	};
 
-	TArray<FAttachmentOption> Options; 
+	TArray<FAttachmentOption> Options;
 
-	CurrentOurSocketHandle.Reset();
-	CurrentTheirSocketHandle.Reset();
-	CurrentDistance = std::numeric_limits<float>::max();
+	if (CurrentOurSocketHandle.IsSet() && CurrentTheirSocketHandle.IsSet())
+	{
+		CurrentDistance = FVector::Distance(CurrentOurSocketHandle.GetWorldLocation(), CurrentTheirSocketHandle.GetWorldLocation());
+	}
 
 	for (const FOverlapResult& Overlap : Overlaps)
 	{
@@ -404,6 +428,11 @@ void UUHAttachable::UpdateCurrentTarget()
 		{
 			break;
 		}
+
+		if (Option.Distance >= CurrentDistance - TargetSwitchDistanceThreshold)
+		{
+			break;
+		}
 		
 		const FVector OurSocketLocation = Option.OurSocket.GetWorldLocation();
 		const FVector To = Option.TheirSocket.GetWorldLocation();
@@ -414,7 +443,7 @@ void UUHAttachable::UpdateCurrentTarget()
 
 		const bool bTraceSuccessful = !Hit.bBlockingHit || Hit.Time > 0.99f;
 
-		if (AttachableCVars::DebugDrawSticking.GetValueOnGameThread())
+		if (AttachableCVars::DebugDrawAttachmentTraces.GetValueOnGameThread())
 		{
 			DrawDebugLine(GetWorld(), Hit.TraceStart, Hit.bBlockingHit ? Hit.Location : Hit.TraceEnd, bTraceSuccessful ? FColor::Green : FColor::Red);
 		}

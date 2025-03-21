@@ -67,6 +67,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	float MovementSpeed;
 
+	UPROPERTY(EditAnywhere)
+	float TargetSwitchDistanceThreshold;
+	
 	UUHAttachable();
 
 	bool IsAttachInProgress() const;
