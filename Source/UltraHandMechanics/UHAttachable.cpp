@@ -179,6 +179,10 @@ void UUHAttachable::Detach(USceneComponent* PartToDetach)
 	Parts[0].ConnectedPartIndices.Reset();
 	
 	MovementComponent->UpdatedComponentShapeMightChange();
+	
+	CurrentOurSocketHandle.Reset();
+	CurrentTheirSocketHandle.Reset();
+	CurrentDistance = std::numeric_limits<float>::max();
 }
 
 void UUHAttachable::CopyPartsFrom(
@@ -386,6 +390,12 @@ void UUHAttachable::UpdateCurrentTarget()
 	if (CurrentOurSocketHandle.IsSet() && CurrentTheirSocketHandle.IsSet())
 	{
 		CurrentDistance = FVector::Distance(CurrentOurSocketHandle.GetWorldLocation(), CurrentTheirSocketHandle.GetWorldLocation());
+		if (CurrentDistance > MaxAttachDistance)
+		{
+			CurrentOurSocketHandle.Reset();
+			CurrentTheirSocketHandle.Reset();
+			CurrentDistance = std::numeric_limits<float>::max();
+		}
 	}
 
 	for (const FOverlapResult& Overlap : Overlaps)
