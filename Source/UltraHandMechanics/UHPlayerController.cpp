@@ -9,6 +9,109 @@
 #include "InputActionValue.h"
 #include "GameFramework/Character.h"
 
+
+void FUHPlayerControllerMode::Enter(AUHPlayerController* Controller)
+{
+}
+
+void FUHPlayerControllerMode::Leave(AUHPlayerController* Controller)
+{
+}
+
+EControlMode FUHPlayerControllerMode::GetMode() const
+{
+	return EControlMode::Regular;
+}
+
+
+void FUHPlayerControllerRegularMode::Enter(AUHPlayerController* Controller)
+{
+}
+
+void FUHPlayerControllerRegularMode::Leave(AUHPlayerController* Controller)
+{
+}
+
+EControlMode FUHPlayerControllerRegularMode::GetMode() const
+{
+	return EControlMode::Regular;
+}
+
+
+void FUHPlayerControllerPickingMode::Enter(AUHPlayerController* Controller)
+{
+	if (ensure(Controller))
+	{
+		Controller->Picker->SetPickingEnabled(true);
+	}
+}
+
+void FUHPlayerControllerPickingMode::Leave(AUHPlayerController* Controller)
+{
+	if (ensure(Controller))
+	{
+		Controller->Picker->SetPickingEnabled(false);
+	}
+}
+
+EControlMode FUHPlayerControllerPickingMode::GetMode() const
+{
+	return EControlMode::UltraHandPicking;
+}
+
+
+void FUHPlayerControllerManipulatingMode::Enter(AUHPlayerController* Controller)
+{
+	if (!ensure(ManipulatedBlockPart))
+	{
+		return;
+	}
+
+	if (!ensure(Controller))
+	{
+		return;
+	}
+	
+	FRotator NewRotation = Controller->GetControlRotation();
+	NewRotation.Yaw = (ManipulatedBlockPart->GetComponentLocation() - Controller->GetPawn()->GetActorLocation()).Rotation().Yaw;
+	Controller->SetControlRotation(NewRotation);
+
+	if (UUHManipulator* Manipulator = Controller->GetPawnManipulator())
+	{
+		Manipulator->StartManipulation(ManipulatedBlockPart);
+	}
+}
+
+void FUHPlayerControllerManipulatingMode::Leave(AUHPlayerController* Controller)
+{
+	if (UUHManipulator* Manipulator = Controller->GetPawnManipulator())
+	{
+		Manipulator->StopManipulation();
+	}
+
+	ManipulatedBlockPart = nullptr;
+}
+
+EControlMode FUHPlayerControllerManipulatingMode::GetMode() const
+{
+	return EControlMode::UltraHandManipulation;
+}
+
+
+void FUHPlayerControllerTurningMode::Enter(AUHPlayerController* Controller)
+{
+}
+
+void FUHPlayerControllerTurningMode::Leave(AUHPlayerController* Controller)
+{
+}
+
+EControlMode FUHPlayerControllerTurningMode::GetMode() const
+{
+	return EControlMode::UltraHandTurning;
+}
+
+
 AUHPlayerController::AUHPlayerController()
 {
 	Picker = CreateDefaultSubobject<UUHPicker>(TEXT("Picker"));
@@ -16,19 +119,19 @@ AUHPlayerController::AUHPlayerController()
 
 void AUHPlayerController::PlayerTick(float DeltaTime)
 {
-	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	if (PawnManipulator)
 	{
-		if (Manipulator->IsManipulating())
+		if (PawnManipulator->IsManipulating())
 		{
 			TimeSinceLastUltraHandInput += DeltaTime;
 
 			if (RotationCorrectionDelay > 0.f && RotationCorrectionSpeed > 0.f && TimeSinceLastUltraHandInput >= RotationCorrectionDelay)
 			{
-				const FVector Offset = Manipulator->GetOffset();
+				const FVector Offset = PawnManipulator->GetOffset();
 				const float YawOffset = Offset.HeadingAngle();
 				const float YawDelta = FMath::FInterpTo(0.f, FMath::RadiansToDegrees(YawOffset), DeltaTime, RotationCorrectionSpeed);
 				const float DistanceScale = FMath::Cos(YawOffset);
-				Manipulator->MoveRelative(FVector::ForwardVector * Offset.X * (DistanceScale - 1.f));
+				PawnManipulator->MoveRelative(FVector::ForwardVector * Offset.X * (DistanceScale - 1.f));
 				GetPawn()->AddControllerYawInput(YawDelta);
 			}
 		}
@@ -66,7 +169,7 @@ void AUHPlayerController::PostProcessInput(const float DeltaTime, const bool bGa
 
 EControlMode AUHPlayerController::GetControlMode() const
 {
-	return ControlMode;
+	return ensure(!ModeStack.IsEmpty()) ? ModeStack.Last()->GetMode() : EControlMode::Regular;
 }
 
 void AUHPlayerController::SetupInputComponent()
@@ -93,11 +196,22 @@ void AUHPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(UltraHandAttachAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandAttach);
 		EnhancedInputComponent->BindAction(UltraHandDetachAction, ETriggerEvent::Triggered, this, &AUHPlayerController::UltraHandDetach);
 	}
-	
-	if (auto* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
-	{
-		InputSubsystem->AddMappingContext(DefaultMappingContext, 0);
-	}
+
+	EnterMode(&RegularMode);
+}
+
+void AUHPlayerController::OnPossess(APawn* Pawn)
+{
+	Super::OnPossess(Pawn);
+
+	PawnManipulator = Pawn->FindComponentByClass<UUHManipulator>();
+}
+
+void AUHPlayerController::OnUnPossess()
+{
+	Super::OnUnPossess();
+
+	PawnManipulator = nullptr;
 }
 
 void AUHPlayerController::Jump()
@@ -124,50 +238,19 @@ void AUHPlayerController::UltraHandStart()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandStart"));
 
-	ControlMode = EControlMode::UltraHandPicking;
-	
-	Picker->SetPickingEnabled(true);
-	
-	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
-	{
-		InputSubsystem->AddMappingContext(UltraHandPickingMappingContext, 1);
-	}
-
-	if (auto* const Character = GetUltraHandCharacter())
-	{
-		Character->ActivateUltraHandPickingCamera();
-	}
+	EnterMode(&PickingMode);
 }
 
 void AUHPlayerController::UltraHandPick()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandPick"));
 	
-	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	if (UPrimitiveComponent* const SelectedPart = Picker->GetSelectedBlockPart())
 	{
-		if (UPrimitiveComponent* const SelectedPart = Picker->GetSelectedBlockPart())
-		{
-			ControlMode = EControlMode::UltraHandManipulation;
-			
-			FRotator NewRotation = GetControlRotation();
-			NewRotation.Yaw = (SelectedPart->GetComponentLocation() - GetPawn()->GetActorLocation()).Rotation().Yaw;
-			SetControlRotation(NewRotation);
-			
-			Manipulator->StartManipulation(SelectedPart);
-			
-			Picker->SetPickingEnabled(false);
+		ManipulatingMode.ManipulatedBlockPart = SelectedPart;
 
-			if (auto* const Character = GetUltraHandCharacter())
-			{
-				Character->ActivateUltraHandManipulatingCamera(SelectedPart);
-			}
-	
-			if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
-			{
-				InputSubsystem->RemoveMappingContext(UltraHandPickingMappingContext);
-				InputSubsystem->AddMappingContext(UltraHandManipulatingMappingContext, 2);
-			}
-		}
+		LeaveMode(&PickingMode);
+		EnterMode(&ManipulatingMode);
 	}
 }
 
@@ -175,26 +258,7 @@ void AUHPlayerController::UltraHandStop()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandStop"));
 
-	ControlMode = EControlMode::Regular;
-	
-	Picker->SetPickingEnabled(false);
-	
-	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
-	{
-		Manipulator->StopManipulation();
-	}
-	
-	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
-	{
-		InputSubsystem->RemoveMappingContext(UltraHandPickingMappingContext);
-		InputSubsystem->RemoveMappingContext(UltraHandManipulatingMappingContext);
-		InputSubsystem->RemoveMappingContext(UltraHandManipulatingTurningMappingContext);
-	}
-	
-	if (auto* const Character = GetUltraHandCharacter())
-	{
-		Character->ActivateRegularCamera();
-	}
+	LeaveModesUpTo(&RegularMode);
 }
 
 void AUHPlayerController::Move(const FInputActionValue& Value)
@@ -234,9 +298,9 @@ void AUHPlayerController::Look(const FInputActionValue& Value)
 
 void AUHPlayerController::UltraHandMove(const FInputActionValue& Value)
 {
-	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	if (PawnManipulator)
 	{
-		Manipulator->MoveRelative(Value.Get<FVector>());
+		PawnManipulator->MoveRelative(Value.Get<FVector>());
 	
 		TimeSinceLastUltraHandInput = 0.f;
 	}
@@ -260,33 +324,23 @@ void AUHPlayerController::UltraHandTurnStart()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnStart"));
 
-	ControlMode = EControlMode::UltraHandTurning;
-	
-	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
-	{
-		InputSubsystem->AddMappingContext(UltraHandManipulatingTurningMappingContext, 3);
-	}
+	EnterMode(&TurningMode);
 }
 
 void AUHPlayerController::UltraHandTurnStop()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnStop"));
-	
-	ControlMode = EControlMode::UltraHandManipulation;
-	
-	if (auto* const InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
-	{
-		InputSubsystem->RemoveMappingContext(UltraHandManipulatingTurningMappingContext);
-	}
+
+	LeaveMode(&TurningMode);
 }
 
 void AUHPlayerController::UltraHandTurnLeft()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnLeft"));
 	
-	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	if (PawnManipulator)
 	{
-		Manipulator->TurnLeft();
+		PawnManipulator->TurnLeft();
 	}
 }
 
@@ -294,9 +348,9 @@ void AUHPlayerController::UltraHandTurnRight()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnRight"));
 	
-	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	if (PawnManipulator)
 	{
-		Manipulator->TurnRight();
+		PawnManipulator->TurnRight();
 	}
 }
 
@@ -304,9 +358,9 @@ void AUHPlayerController::UltraHandTurnUp()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnUp"));
 	
-	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	if (PawnManipulator)
 	{
-		Manipulator->TurnUp();
+		PawnManipulator->TurnUp();
 	}
 }
 
@@ -314,9 +368,9 @@ void AUHPlayerController::UltraHandTurnDown()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandTurnDown"));
 	
-	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	if (PawnManipulator)
 	{
-		Manipulator->TurnDown();
+		PawnManipulator->TurnDown();
 	}
 }
 
@@ -324,9 +378,9 @@ void AUHPlayerController::UltraHandAttach()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandAttach"));
 
-	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	if (PawnManipulator)
 	{
-		if (Manipulator->StartSticking())
+		if (PawnManipulator->StartSticking())
 		{
 			UltraHandStop();
 		}
@@ -337,10 +391,89 @@ void AUHPlayerController::UltraHandDetach()
 {
 	UE_LOG(LogPlayerController, Display, TEXT("UltraHandDetach"));
 
-	if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+	if (PawnManipulator)
 	{
-		Manipulator->Detach();
+		PawnManipulator->Detach();
 	}
+}
+
+void AUHPlayerController::EnterMode(FUHPlayerControllerMode* Mode)
+{
+	ModeStack.Push(Mode);
+
+	Mode->Enter(this);
+	
+	if (auto* const InputSubsystem = GetInputSubsystem())
+	{
+		InputSubsystem->AddMappingContext(Mode->MappingContext, ModeStack.Num());
+	}
+
+	SyncCameraWithCurrentMode();
+}
+
+void AUHPlayerController::LeaveMode(FUHPlayerControllerMode* Mode)
+{
+	if (!ensure(ModeStack.Last() == Mode))
+	{
+		return;
+	}
+	
+	ModeStack.Pop(EAllowShrinking::No);
+
+	Mode->Leave(this);
+
+	if (auto* const InputSubsystem = GetInputSubsystem())
+	{
+		InputSubsystem->RemoveMappingContext(Mode->MappingContext);
+	}
+	
+	SyncCameraWithCurrentMode();
+}
+
+void AUHPlayerController::LeaveModesUpTo(FUHPlayerControllerMode* Mode)
+{
+	while (!ModeStack.IsEmpty() && ModeStack.Last() != Mode)
+	{
+		FUHPlayerControllerMode* Popped = ModeStack.Pop(EAllowShrinking::No);
+		
+		Popped->Leave(this);
+		
+		if (auto* const InputSubsystem = GetInputSubsystem())
+		{
+			InputSubsystem->RemoveMappingContext(Popped->MappingContext);
+		}
+	}
+
+	ensure(!ModeStack.IsEmpty());
+
+	SyncCameraWithCurrentMode();
+}
+
+void AUHPlayerController::SyncCameraWithCurrentMode()
+{
+	if (auto* const Character = GetUltraHandCharacter())
+	{
+		switch (GetControlMode())
+		{
+		case EControlMode::Regular:
+			Character->ActivateRegularCamera();
+			break;
+		case EControlMode::UltraHandPicking:
+			Character->ActivateUltraHandPickingCamera();
+			break;
+		case EControlMode::UltraHandManipulation:
+			Character->ActivateUltraHandManipulatingCamera(ManipulatingMode.ManipulatedBlockPart);
+			break;
+		case EControlMode::UltraHandTurning:
+			Character->ActivateUltraHandManipulatingCamera(ManipulatingMode.ManipulatedBlockPart);
+			break;
+		}
+	}
+}
+
+UEnhancedInputLocalPlayerSubsystem* AUHPlayerController::GetInputSubsystem() const
+{
+	return ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 }
 
 AUHCharacter* AUHPlayerController::GetUltraHandCharacter() const
@@ -352,11 +485,11 @@ float AUHPlayerController::MovementScale(float LocalHeadingAngle) const
 {
 	if (MaxDistanceOffset > 0.f)
 	{
-		if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
+		if (PawnManipulator)
 		{
-			if (Manipulator->IsManipulating())
+			if (PawnManipulator->IsManipulating())
 			{
-				const FVector Error = Manipulator->GetError();
+				const FVector Error = PawnManipulator->GetError();
 				const float ErrorRatio = FMath::Clamp(Error.Length() / MaxDistanceOffset, 0.f, 1.f);
 				const float ErrorHeading = Error.HeadingAngle();
 				const float AlignmentFactor = FMath::Clamp(FMath::Cos(ErrorHeading - LocalHeadingAngle), 0.f, 1.f);
@@ -366,4 +499,9 @@ float AUHPlayerController::MovementScale(float LocalHeadingAngle) const
 	}
 
 	return 1.f;
+}
+
+UUHManipulator* AUHPlayerController::GetPawnManipulator() const
+{
+	return PawnManipulator;
 }

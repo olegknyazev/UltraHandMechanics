@@ -4,10 +4,13 @@
 #include "GameFramework/PlayerController.h"
 #include "UHPlayerController.generated.h"
 
+class AUHPlayerController;
 class AUHCharacter;
 class UUHPicker;
+class UUHManipulator;
 class UInputAction;
 class UInputMappingContext;
+class UEnhancedInputLocalPlayerSubsystem;
 struct FInputActionValue;
 
 
@@ -21,6 +24,69 @@ enum class EControlMode : uint8
 };
 
 
+USTRUCT()
+struct ULTRAHANDMECHANICS_API FUHPlayerControllerMode
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere)
+	UInputMappingContext* MappingContext;
+
+	virtual ~FUHPlayerControllerMode() = default;
+
+	virtual void Enter(AUHPlayerController* Controller);
+	virtual void Leave(AUHPlayerController* Controller);
+	virtual EControlMode GetMode() const;
+};
+
+
+USTRUCT()
+struct ULTRAHANDMECHANICS_API FUHPlayerControllerRegularMode : public FUHPlayerControllerMode
+{
+	GENERATED_BODY()
+	
+	virtual void Enter(AUHPlayerController* Controller) override;
+	virtual void Leave(AUHPlayerController* Controller) override;
+	virtual EControlMode GetMode() const override;
+};
+
+
+USTRUCT()
+struct ULTRAHANDMECHANICS_API FUHPlayerControllerPickingMode : public FUHPlayerControllerMode
+{
+	GENERATED_BODY()
+	
+	virtual void Enter(AUHPlayerController* Controller) override;
+	virtual void Leave(AUHPlayerController* Controller) override;
+	virtual EControlMode GetMode() const override;
+};
+
+
+USTRUCT()
+struct ULTRAHANDMECHANICS_API FUHPlayerControllerManipulatingMode : public FUHPlayerControllerMode
+{
+	GENERATED_BODY()
+
+	UPROPERTY(Transient)
+	UPrimitiveComponent* ManipulatedBlockPart;
+	
+	virtual void Enter(AUHPlayerController* Controller) override;
+	virtual void Leave(AUHPlayerController* Controller) override;
+	virtual EControlMode GetMode() const override;
+};
+
+
+USTRUCT()
+struct ULTRAHANDMECHANICS_API FUHPlayerControllerTurningMode : public FUHPlayerControllerMode
+{
+	GENERATED_BODY()
+	
+	virtual void Enter(AUHPlayerController* Controller) override;
+	virtual void Leave(AUHPlayerController* Controller) override;
+	virtual EControlMode GetMode() const override;
+};
+
+
 UCLASS()
 class ULTRAHANDMECHANICS_API AUHPlayerController : public APlayerController
 {
@@ -29,18 +95,18 @@ class ULTRAHANDMECHANICS_API AUHPlayerController : public APlayerController
 public:
 	UPROPERTY(EditAnywhere)
 	UUHPicker* Picker;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
-	UInputMappingContext* DefaultMappingContext;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
-	UInputMappingContext* UltraHandPickingMappingContext;
+	UPROPERTY(EditAnywhere)
+	FUHPlayerControllerRegularMode RegularMode;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
-	UInputMappingContext* UltraHandManipulatingMappingContext;
+	UPROPERTY(EditAnywhere)
+	FUHPlayerControllerPickingMode PickingMode;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
-	UInputMappingContext* UltraHandManipulatingTurningMappingContext;
+	UPROPERTY(EditAnywhere)
+	FUHPlayerControllerManipulatingMode ManipulatingMode;
+	
+	UPROPERTY(EditAnywhere)
+	FUHPlayerControllerTurningMode TurningMode;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* JumpAction;
@@ -106,16 +172,21 @@ public:
 	float MaxDistanceOffset;
 	
 	AUHPlayerController();
-	
+
 	virtual void PlayerTick(float DeltaTime) override;
 
 	virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;
 
 	UFUNCTION(BlueprintCallable)
 	EControlMode GetControlMode() const;
+
+	UUHManipulator* GetPawnManipulator() const;
 	
 protected:
 	virtual void SetupInputComponent() override;
+
+	virtual void OnPossess(APawn* Pawn) override;
+	virtual void OnUnPossess() override;
 
 private:
 	void Jump();
@@ -136,10 +207,20 @@ private:
 	void UltraHandAttach();
 	void UltraHandDetach();
 
+	void EnterMode(FUHPlayerControllerMode* Mode);
+	void LeaveMode(FUHPlayerControllerMode* Mode);
+	void LeaveModesUpTo(FUHPlayerControllerMode* Mode);
+	void SyncCameraWithCurrentMode();
+
+	UEnhancedInputLocalPlayerSubsystem* GetInputSubsystem() const;
 	AUHCharacter* GetUltraHandCharacter() const;
 
 	float MovementScale(float LocalHeadingAngle) const;
 
-	EControlMode ControlMode;
+	UPROPERTY(Transient)
+	UUHManipulator* PawnManipulator;
+
 	float TimeSinceLastUltraHandInput;
+
+	TArray<FUHPlayerControllerMode*> ModeStack;
 };
