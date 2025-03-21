@@ -24,8 +24,11 @@ void AUHPlayerController::PlayerTick(float DeltaTime)
 
 			if (RotationCorrectionDelay > 0.f && RotationCorrectionSpeed > 0.f && TimeSinceLastUltraHandInput >= RotationCorrectionDelay)
 			{
-				const float YawOffset = Manipulator->GetOffset().HeadingAngle();
+				const FVector Offset = Manipulator->GetOffset();
+				const float YawOffset = Offset.HeadingAngle();
 				const float YawDelta = FMath::FInterpTo(0.f, FMath::RadiansToDegrees(YawOffset), DeltaTime, RotationCorrectionSpeed);
+				const float DistanceScale = FMath::Cos(YawOffset);
+				Manipulator->MoveRelative(FVector::ForwardVector * Offset.X * (DistanceScale - 1.f));
 				GetPawn()->AddControllerYawInput(YawDelta);
 			}
 		}
