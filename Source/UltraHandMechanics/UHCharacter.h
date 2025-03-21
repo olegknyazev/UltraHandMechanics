@@ -4,7 +4,7 @@
 #include "GameFramework/Character.h"
 #include "UHCharacter.generated.h"
 
-class UUHCharacherCameraController;
+class UUHCharacterCameraController;
 class UUHManipulator;
 class USceneComponent;
 class USpringArmComponent;
@@ -26,7 +26,7 @@ public:
 	UUHManipulator* Manipulator;
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
-	UUHCharacherCameraController* CameraController;
+	UUHCharacterCameraController* CameraController;
 
 	UPROPERTY(EditAnywhere)
 	float WalkSpeed;

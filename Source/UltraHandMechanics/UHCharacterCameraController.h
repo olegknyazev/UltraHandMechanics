@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "UHCharacherCameraController.generated.h"
+#include "UHCharacterCameraController.generated.h"
 
 
 class USceneComponent;
@@ -57,7 +57,7 @@ struct ULTRAHANDMECHANICS_API FUH3rdPersonManipulatingCameraSettings : public FU
 
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class ULTRAHANDMECHANICS_API UUHCharacherCameraController : public UActorComponent
+class ULTRAHANDMECHANICS_API UUHCharacterCameraController : public UActorComponent
 {
 	GENERATED_BODY()
 
@@ -77,7 +77,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	FUH3rdPersonManipulatingCameraSettings UltraHandManipulatingSettings;
 
-	UUHCharacherCameraController();
+	UUHCharacterCameraController();
 
 	void ActivateRegularMode();
 	void ActivateUltraHandPickingMode();

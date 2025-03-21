@@ -1,14 +1,14 @@
-#include "UHCharacherCameraController.h"
+#include "UHCharacterCameraController.h"
 
 #include "GameFramework/SpringArmComponent.h"
 
 
-UUHCharacherCameraController::UUHCharacherCameraController()
+UUHCharacterCameraController::UUHCharacterCameraController()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-void UUHCharacherCameraController::ActivateRegularMode()
+void UUHCharacterCameraController::ActivateRegularMode()
 {
 	Mode = EMode::Regular;
 	ManipulatedComponent = nullptr;
@@ -19,7 +19,7 @@ void UUHCharacherCameraController::ActivateRegularMode()
 	}
 }
 
-void UUHCharacherCameraController::ActivateUltraHandPickingMode()
+void UUHCharacterCameraController::ActivateUltraHandPickingMode()
 {
 	Mode = EMode::UltraHandPicking;
 	ManipulatedComponent = nullptr;
@@ -30,7 +30,7 @@ void UUHCharacherCameraController::ActivateUltraHandPickingMode()
 	}
 }
 
-void UUHCharacherCameraController::ActivateUltraHandManipulatingMode(USceneComponent* InManipulatedComponent)
+void UUHCharacterCameraController::ActivateUltraHandManipulatingMode(USceneComponent* InManipulatedComponent)
 {
 	ensure(InManipulatedComponent);
 	
@@ -44,7 +44,7 @@ void UUHCharacherCameraController::ActivateUltraHandManipulatingMode(USceneCompo
 	}
 }
 
-void UUHCharacherCameraController::BeginPlay()
+void UUHCharacterCameraController::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -56,7 +56,7 @@ void UUHCharacherCameraController::BeginPlay()
 	}
 }
 
-void UUHCharacherCameraController::TickComponent(
+void UUHCharacterCameraController::TickComponent(
 	float DeltaTime,
 	ELevelTick TickType,
 	FActorComponentTickFunction* ThisTickFunction)
@@ -92,7 +92,7 @@ void UUHCharacherCameraController::TickComponent(
 	}
 }
 
-const FUH3rdPersonCameraSettings& UUHCharacherCameraController::GetSettings(EMode Mode) const
+const FUH3rdPersonCameraSettings& UUHCharacterCameraController::GetSettings(EMode Mode) const
 {
 	switch (Mode)
 	{
@@ -110,7 +110,7 @@ const FUH3rdPersonCameraSettings& UUHCharacherCameraController::GetSettings(EMod
 	}
 }
 
-FRotator UUHCharacherCameraController::GetControlRotation() const
+FRotator UUHCharacterCameraController::GetControlRotation() const
 {
 	if (auto* const OwnerPawn = Cast<APawn>(GetOwner()))
 	{
@@ -119,7 +119,7 @@ FRotator UUHCharacherCameraController::GetControlRotation() const
 	return FRotator::ZeroRotator;
 }
 
-FVector UUHCharacherCameraController::GetBlockRelativeLocation() const
+FVector UUHCharacterCameraController::GetBlockRelativeLocation() const
 {
 	if (!ManipulatedComponent)
 	{
@@ -132,7 +132,7 @@ FVector UUHCharacherCameraController::GetBlockRelativeLocation() const
 	return OriginTransform.InverseTransformPosition(ManipulatedComponent->GetComponentLocation());
 }
 
-void UUHCharacherCameraController::ComputeManipulatingCameraFactors(float& DistanceFactor, float& PitchFactor) const
+void UUHCharacterCameraController::ComputeManipulatingCameraFactors(float& DistanceFactor, float& PitchFactor) const
 {
 	const FUH3rdPersonManipulatingCameraSettings& Settings = UltraHandManipulatingSettings;
 	

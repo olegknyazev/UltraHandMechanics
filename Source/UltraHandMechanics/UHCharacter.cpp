@@ -1,6 +1,6 @@
 #include "UHCharacter.h"
 
-#include "UHCharacherCameraController.h"
+#include "UHCharacterCameraController.h"
 #include "UHManipulator.h"
 
 #include "Engine/LocalPlayer.h"
@@ -41,7 +41,7 @@ AUHCharacter::AUHCharacter()
 	Manipulator = CreateDefaultSubobject<UUHManipulator>(TEXT("Manipulator"));
 	Manipulator->SetupAttachment(GetRootComponent());
 
-	CameraController = CreateDefaultSubobject<UUHCharacherCameraController>(TEXT("CameraController"));
+	CameraController = CreateDefaultSubobject<UUHCharacterCameraController>(TEXT("CameraController"));
 	CameraController->Camera = FollowCamera;
 	CameraController->SpringArm = CameraBoom;
 }
