@@ -24,6 +24,8 @@ EControlMode FUHPlayerControllerMode::GetMode() const
 }
 
 
+// Regular
+
 void FUHPlayerControllerRegularMode::Enter(AUHPlayerController* Controller)
 {
 }
@@ -37,6 +39,8 @@ EControlMode FUHPlayerControllerRegularMode::GetMode() const
 	return EControlMode::Regular;
 }
 
+
+// Picking
 
 void FUHPlayerControllerPickingMode::Enter(AUHPlayerController* Controller)
 {
@@ -59,6 +63,8 @@ EControlMode FUHPlayerControllerPickingMode::GetMode() const
 	return EControlMode::UltraHandPicking;
 }
 
+
+// Manipulating
 
 void FUHPlayerControllerManipulatingMode::Enter(AUHPlayerController* Controller)
 {
@@ -98,6 +104,8 @@ EControlMode FUHPlayerControllerManipulatingMode::GetMode() const
 }
 
 
+// Turning
+
 void FUHPlayerControllerTurningMode::Enter(AUHPlayerController* Controller)
 {
 }
@@ -111,6 +119,8 @@ EControlMode FUHPlayerControllerTurningMode::GetMode() const
 	return EControlMode::UltraHandTurning;
 }
 
+
+// --
 
 AUHPlayerController::AUHPlayerController()
 {
@@ -144,13 +154,25 @@ void AUHPlayerController::PostProcessInput(const float DeltaTime, const bool bGa
 {
 	Super::PostProcessInput(DeltaTime, bGamePaused);
 
+	EnforceMaxRotationSpeed(DeltaTime);
+
+	EnforceMaxYawOffset();
+
+	RotationInput.Yaw *= DeviationBasedMovementScale(FMath::Sign(RotationInput.Yaw) * UE_PI / 2.f);
+}
+
+void AUHPlayerController::EnforceMaxRotationSpeed(const float DeltaTime)
+{
 	if (MaxRotationSpeed > 0.f)
 	{
 		const float MaxRotationPerFrame = MaxRotationSpeed * DeltaTime;
 		RotationInput.Pitch = FMath::Clamp(RotationInput.Pitch, -MaxRotationPerFrame, MaxRotationPerFrame);
 		RotationInput.Yaw = FMath::Clamp(RotationInput.Yaw, -MaxRotationPerFrame, MaxRotationPerFrame);
 	}
+}
 
+void AUHPlayerController::EnforceMaxYawOffset()
+{
 	if (MaxYawOffset > 0.f)
 	{
 		if (auto* const Manipulator = GetPawn()->FindComponentByClass<UUHManipulator>())
@@ -163,8 +185,6 @@ void AUHPlayerController::PostProcessInput(const float DeltaTime, const bool bGa
 			}
 		}
 	}
-
-	RotationInput.Yaw *= MovementScale(FMath::Sign(RotationInput.Yaw) * UE_PI / 2.f);
 }
 
 EControlMode AUHPlayerController::GetControlMode() const
@@ -269,11 +289,10 @@ void AUHPlayerController::Move(const FInputActionValue& Value)
 	}
 	
 	auto MovementVector = Value.Get<FVector2D>();
-	MovementVector *= MovementScale(FMath::Atan2(MovementVector.X, MovementVector.Y));
+	MovementVector *= DeviationBasedMovementScale(FMath::Atan2(MovementVector.X, MovementVector.Y));
 	
-	const FRotator Rotation = GetControlRotation();
-	const FRotator YawRotation(0, Rotation.Yaw, 0);
-	const FRotationMatrix RotationMatrix(YawRotation);
+	const FRotator ControlRotation = GetControlRotation();
+	const FRotationMatrix RotationMatrix{FRotator{0, ControlRotation.Yaw, 0}};
 	const FVector ForwardDirection = RotationMatrix.GetUnitAxis(EAxis::X);
 	const FVector RightDirection = RotationMatrix.GetUnitAxis(EAxis::Y);
 
@@ -290,10 +309,10 @@ void AUHPlayerController::Look(const FInputActionValue& Value)
 		return;
 	}
 	
-	const auto LookAxisVector = Value.Get<FVector2D>();
+	const auto LookDelta = Value.Get<FVector2D>();
 
-	GetPawn()->AddControllerYawInput(LookAxisVector.X);
-	GetPawn()->AddControllerPitchInput(LookAxisVector.Y);
+	AddYawInput(LookDelta.X);
+	AddPitchInput(LookDelta.Y);
 }
 
 void AUHPlayerController::UltraHandMove(const FInputActionValue& Value)
@@ -313,9 +332,9 @@ void AUHPlayerController::UltraHandLook(const FInputActionValue& Value)
 		return;
 	}
 	
-	const auto LookYawValue = Value.Get<float>();
+	const auto YawDelta = Value.Get<float>();
 	
-	GetPawn()->AddControllerYawInput(LookYawValue);
+	AddYawInput(YawDelta);
 	
 	TimeSinceLastUltraHandInput = 0.f;
 }
@@ -403,7 +422,7 @@ void AUHPlayerController::EnterMode(FUHPlayerControllerMode* Mode)
 
 	Mode->Enter(this);
 	
-	if (auto* const InputSubsystem = GetInputSubsystem())
+	if (UEnhancedInputLocalPlayerSubsystem* const InputSubsystem = GetInputSubsystem())
 	{
 		InputSubsystem->AddMappingContext(Mode->MappingContext, ModeStack.Num());
 	}
@@ -422,7 +441,7 @@ void AUHPlayerController::LeaveMode(FUHPlayerControllerMode* Mode)
 
 	Mode->Leave(this);
 
-	if (auto* const InputSubsystem = GetInputSubsystem())
+	if (UEnhancedInputLocalPlayerSubsystem* const InputSubsystem = GetInputSubsystem())
 	{
 		InputSubsystem->RemoveMappingContext(Mode->MappingContext);
 	}
@@ -438,7 +457,7 @@ void AUHPlayerController::LeaveModesUpTo(FUHPlayerControllerMode* Mode)
 		
 		Popped->Leave(this);
 		
-		if (auto* const InputSubsystem = GetInputSubsystem())
+		if (UEnhancedInputLocalPlayerSubsystem* const InputSubsystem = GetInputSubsystem())
 		{
 			InputSubsystem->RemoveMappingContext(Popped->MappingContext);
 		}
@@ -481,7 +500,7 @@ AUHCharacter* AUHPlayerController::GetUltraHandCharacter() const
 	return Cast<AUHCharacter>(GetPawn());
 }
 
-float AUHPlayerController::MovementScale(float LocalHeadingAngle) const
+float AUHPlayerController::DeviationBasedMovementScale(float LocalHeadingAngle) const
 {
 	if (MaxDistanceOffset > 0.f)
 	{
@@ -489,11 +508,11 @@ float AUHPlayerController::MovementScale(float LocalHeadingAngle) const
 		{
 			if (PawnManipulator->IsManipulating())
 			{
-				const FVector Error = PawnManipulator->GetError();
-				const float ErrorRatio = FMath::Clamp(Error.Length() / MaxDistanceOffset, 0.f, 1.f);
-				const float ErrorHeading = Error.HeadingAngle();
-				const float AlignmentFactor = FMath::Clamp(FMath::Cos(ErrorHeading - LocalHeadingAngle), 0.f, 1.f);
-				return 1.f - FMath::Square(ErrorRatio) * AlignmentFactor;
+				const FVector Deviation = PawnManipulator->GetDeviation();
+				const float DeviationRatio = FMath::Clamp(Deviation.Length() / MaxDistanceOffset, 0.f, 1.f);
+				const float DeviationHeading = Deviation.HeadingAngle();
+				const float AlignmentFactor = FMath::Clamp(FMath::Cos(DeviationHeading - LocalHeadingAngle), 0.f, 1.f);
+				return 1.f - FMath::Square(DeviationRatio) * AlignmentFactor;
 			}
 		}
 	}

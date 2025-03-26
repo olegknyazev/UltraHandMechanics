@@ -212,10 +212,13 @@ private:
 	void LeaveModesUpTo(FUHPlayerControllerMode* Mode);
 	void SyncCameraWithCurrentMode();
 
+	void EnforceMaxRotationSpeed(float DeltaTime);
+	void EnforceMaxYawOffset();
+	
 	UEnhancedInputLocalPlayerSubsystem* GetInputSubsystem() const;
 	AUHCharacter* GetUltraHandCharacter() const;
 
-	float MovementScale(float LocalHeadingAngle) const;
+	float DeviationBasedMovementScale(float LocalHeadingAngle) const;
 
 	UPROPERTY(Transient)
 	UUHManipulator* PawnManipulator;

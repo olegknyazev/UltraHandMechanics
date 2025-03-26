@@ -51,7 +51,7 @@ public:
 	void Detach();
 
 	FVector GetOffset() const;
-	FVector GetError() const;
+	FVector GetDeviation() const;
 
 	virtual void BeginPlay() override;
 

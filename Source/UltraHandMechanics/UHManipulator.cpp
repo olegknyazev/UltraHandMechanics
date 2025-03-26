@@ -128,7 +128,7 @@ FVector UUHManipulator::GetOffset() const
 	return ManipulatedBlock ? GetOriginTransform().InverseTransformPosition(ManipulatedBlock->GetActorLocation()) : FVector::Zero();
 }
 
-FVector UUHManipulator::GetError() const
+FVector UUHManipulator::GetDeviation() const
 {
 	return ManipulatedBlock ? BlockRelativeLocation - GetOffset() : FVector::Zero();
 }
