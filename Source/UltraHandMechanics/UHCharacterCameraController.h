@@ -65,9 +65,6 @@ public:
 	UPROPERTY()
 	USpringArmComponent* SpringArm;
 
-	UPROPERTY()
-	UCameraComponent* Camera;
-
 	UPROPERTY(EditAnywhere)
 	FUH3rdPersonCameraSettings RegularSettings;
 
@@ -81,7 +78,7 @@ public:
 
 	void ActivateRegularMode();
 	void ActivateUltraHandPickingMode();
-	void ActivateUltraHandManipulatingMode(USceneComponent* InManipulatedComponent);
+	void ActivateUltraHandManipulatingMode(USceneComponent* InManipulatedBlock);
 
 	virtual void BeginPlay() override;
 	
@@ -98,12 +95,12 @@ private:
 		UltraHandManipulating
 	};
 
-	const FUH3rdPersonCameraSettings& GetSettings(EMode Mode) const;
+	const FUH3rdPersonCameraSettings& GetModeSettings() const;
 
 	EMode Mode = EMode::Regular;
 
-	UPROPERTY()
-	USceneComponent* ManipulatedComponent;
+	UPROPERTY(Transient)
+	USceneComponent* ManipulatedBlock;
 
 	FRotator GetControlRotation() const;
 	FVector GetBlockRelativeLocation() const;

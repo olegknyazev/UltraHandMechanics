@@ -11,7 +11,7 @@ UUHCharacterCameraController::UUHCharacterCameraController()
 void UUHCharacterCameraController::ActivateRegularMode()
 {
 	Mode = EMode::Regular;
-	ManipulatedComponent = nullptr;
+	ManipulatedBlock = nullptr;
 	
 	if (SpringArm)
 	{
@@ -22,7 +22,7 @@ void UUHCharacterCameraController::ActivateRegularMode()
 void UUHCharacterCameraController::ActivateUltraHandPickingMode()
 {
 	Mode = EMode::UltraHandPicking;
-	ManipulatedComponent = nullptr;
+	ManipulatedBlock = nullptr;
 	
 	if (SpringArm)
 	{
@@ -30,12 +30,12 @@ void UUHCharacterCameraController::ActivateUltraHandPickingMode()
 	}
 }
 
-void UUHCharacterCameraController::ActivateUltraHandManipulatingMode(USceneComponent* InManipulatedComponent)
+void UUHCharacterCameraController::ActivateUltraHandManipulatingMode(USceneComponent* InManipulatedBlock)
 {
-	ensure(InManipulatedComponent);
+	ensure(InManipulatedBlock);
 	
 	Mode = EMode::UltraHandManipulating;
-	ManipulatedComponent = InManipulatedComponent;
+	ManipulatedBlock = InManipulatedBlock;
 	
 	if (SpringArm)
 	{
@@ -50,7 +50,7 @@ void UUHCharacterCameraController::BeginPlay()
 
 	if (SpringArm)
 	{
-		const auto& Settings = GetSettings(Mode);
+		const auto& Settings = GetModeSettings();
 		SpringArm->SocketOffset = Settings.Offset;
 		SpringArm->TargetArmLength = Settings.Distance;
 	}
@@ -63,36 +63,36 @@ void UUHCharacterCameraController::TickComponent(
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (SpringArm)
+	if (!SpringArm)
 	{
-		if (Mode == EMode::UltraHandManipulating)
-		{
-			const auto& Settings = UltraHandManipulatingSettings;
+		return;
+	}
+	
+	if (Mode == EMode::UltraHandManipulating)
+	{
+		const FUH3rdPersonManipulatingCameraSettings& Settings = UltraHandManipulatingSettings;
 
-			float DistanceFactor = 0.f;
-			float PitchFactor = 0.f;
-			ComputeManipulatingCameraFactors(DistanceFactor, PitchFactor);
-			
-			FRotator DesiredRotation = GetControlRotation();
-			DesiredRotation.Pitch = FMath::Lerp(Settings.MinPitch, Settings.MaxPitch, PitchFactor);
-			FQuat CurrentRotation = FMath::QInterpTo(SpringArm->GetComponentRotation().Quaternion(), DesiredRotation.Quaternion(), DeltaTime, Settings.BlendSpeed);
+		float DistanceFactor = 0.f;
+		float PitchFactor = 0.f;
+		ComputeManipulatingCameraFactors(DistanceFactor, PitchFactor);
+		
+		FRotator DesiredRotation = GetControlRotation();
+		DesiredRotation.Pitch = FMath::Lerp(Settings.MinPitch, Settings.MaxPitch, PitchFactor);
+		const float DesiredDistance = FMath::Lerp(Settings.Distance, Settings.MaxDistance, DistanceFactor);
 
-			float DesiredDistance = FMath::Lerp(Settings.Distance, Settings.MaxDistance, DistanceFactor);
-			
-			SpringArm->SetWorldRotation(CurrentRotation);
-			SpringArm->SocketOffset = FMath::VInterpTo(SpringArm->SocketOffset, Settings.Offset, DeltaTime, Settings.BlendSpeed);
-			SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, DesiredDistance, DeltaTime, Settings.BlendSpeed);
-		}
-		else
-		{
-			const auto& Settings = GetSettings(Mode);
-			SpringArm->SocketOffset = FMath::VInterpTo(SpringArm->SocketOffset, Settings.Offset, DeltaTime, Settings.BlendSpeed);
-			SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, Settings.Distance, DeltaTime, Settings.BlendSpeed);
-		}
+		SpringArm->SetWorldRotation(FMath::QInterpTo(SpringArm->GetComponentRotation().Quaternion(), DesiredRotation.Quaternion(), DeltaTime, Settings.BlendSpeed));
+		SpringArm->SocketOffset = FMath::VInterpTo(SpringArm->SocketOffset, Settings.Offset, DeltaTime, Settings.BlendSpeed);
+		SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, DesiredDistance, DeltaTime, Settings.BlendSpeed);
+	}
+	else
+	{
+		const FUH3rdPersonCameraSettings& Settings = GetModeSettings();
+		SpringArm->SocketOffset = FMath::VInterpTo(SpringArm->SocketOffset, Settings.Offset, DeltaTime, Settings.BlendSpeed);
+		SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, Settings.Distance, DeltaTime, Settings.BlendSpeed);
 	}
 }
 
-const FUH3rdPersonCameraSettings& UUHCharacterCameraController::GetSettings(EMode Mode) const
+const FUH3rdPersonCameraSettings& UUHCharacterCameraController::GetModeSettings() const
 {
 	switch (Mode)
 	{
@@ -121,24 +121,24 @@ FRotator UUHCharacterCameraController::GetControlRotation() const
 
 FVector UUHCharacterCameraController::GetBlockRelativeLocation() const
 {
-	if (!ManipulatedComponent)
+	if (!ManipulatedBlock)
 	{
 		return FVector::Zero();
 	}
 	
 	FRotator Rotation{GetControlRotation()};
 	Rotation.Pitch = 0.f;
-	FTransform OriginTransform{Rotation, SpringArm->GetComponentLocation()};
-	return OriginTransform.InverseTransformPosition(ManipulatedComponent->GetComponentLocation());
+	const FTransform OriginTransform{Rotation, SpringArm->GetComponentLocation()};
+	return OriginTransform.InverseTransformPosition(ManipulatedBlock->GetComponentLocation());
 }
 
 void UUHCharacterCameraController::ComputeManipulatingCameraFactors(float& DistanceFactor, float& PitchFactor) const
 {
 	const FUH3rdPersonManipulatingCameraSettings& Settings = UltraHandManipulatingSettings;
 	
-	FVector BlockOffset = GetBlockRelativeLocation();
-	float HorizontalFactor = FMath::Clamp(BlockOffset.X / Settings.MaxPitchHorizontalDistance, 0.f, 1.f) * Settings.MaxPitchHorizontalContribution;
-	float VerticalFactor = FMath::Clamp(BlockOffset.Z / Settings.MaxPitchVerticalDistance, 0.f, 1.f) * Settings.MaxPitchVerticalContribution;
+	const FVector BlockOffset = GetBlockRelativeLocation();
+	const float HorizontalFactor = FMath::Clamp(BlockOffset.X / Settings.MaxPitchHorizontalDistance, 0.f, 1.f) * Settings.MaxPitchHorizontalContribution;
+	const float VerticalFactor = FMath::Clamp(BlockOffset.Z / Settings.MaxPitchVerticalDistance, 0.f, 1.f) * Settings.MaxPitchVerticalContribution;
 
 	PitchFactor = 1.f - FMath::Clamp(HorizontalFactor + VerticalFactor, 0.f, 1.f);
 	DistanceFactor = FMath::Clamp(BlockOffset.Length() / Settings.MaxDistanceCombinedDistance, 0.f, 1.f);
