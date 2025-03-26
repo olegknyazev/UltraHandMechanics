@@ -42,7 +42,6 @@ AUHCharacter::AUHCharacter()
 	Manipulator->SetupAttachment(GetRootComponent());
 
 	CameraController = CreateDefaultSubobject<UUHCharacterCameraController>(TEXT("CameraController"));
-	CameraController->Camera = FollowCamera;
 	CameraController->SpringArm = CameraBoom;
 }
 

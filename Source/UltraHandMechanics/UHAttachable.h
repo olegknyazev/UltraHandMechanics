@@ -32,6 +32,8 @@ struct ULTRAHANDMECHANICS_API FUHAttachmentPart
 	UPROPERTY()
 	TArray<FUHAttachmentSocket> Sockets;
 
+	// It's bidirectional: if part A is connected to B, then A.ConnectedPartIndices contains
+	// B and B.ConnectedPartIndices contains A.
 	UPROPERTY()
 	TArray<uint32> ConnectedPartIndices;
 };
@@ -72,11 +74,11 @@ public:
 	
 	UUHAttachable();
 
-	bool IsAttachInProgress() const;
+	bool IsAttachingInProgress() const;
 	void StartAttaching(float InMaxAttachDistance);
 	void StopAttaching();
 
-	bool IsStickInProgress() const;
+	bool IsStickingInProgress() const;
 	bool StartSticking();
 
 	void Detach(USceneComponent* PartToDetach);
@@ -102,13 +104,34 @@ private:
 		UPrimitiveComponent* GetPrimitive() const;
 		FVector GetWorldLocation() const;
 	};
+
+	struct FAttachmentOption
+	{
+		FSocketHandle OurSocket;
+		FSocketHandle TheirSocket;
+		float Distance = std::numeric_limits<float>::max();
+
+		FAttachmentOption() = default;
+		FAttachmentOption(const FSocketHandle& InOurSocket, const FSocketHandle& InTheirSocket);
+
+		bool IsSet() const;
+		void Reset();
+		void UpdateDistance();
+		
+		UPrimitiveComponent* GetOurPrimitive() const;
+		UPrimitiveComponent* GetTheirPrimitive() const;
+	};
+
+	using FIndicesSet = TSet<uint32, DefaultKeyFuncs<uint32>, TSetAllocator<TInlineSparseArrayAllocator<64>>>;
 	
 	static FRotator SnappedRelativeRotation(USceneComponent* Component, USceneComponent* Space);
 
 	FRotator OurTargetRotationInWorldSpace() const;
 	FRotator TheirTargetRotationInWorldSpace() const;
 
-	void UpdateCurrentTarget();
+	void DeclineCurrentAttachmentOptionIfTooFar();
+	void UpdateCurrentAttachmentOption();
+	TArray<FAttachmentOption> FindAllAttachmentOptions();
 	void StopSticking();
 
 	void Attach(UUHAttachable* Other);
@@ -122,7 +145,7 @@ private:
 		const UUHAttachable* Other,
 		uint32 OtherParentPartIndex,
 		uint32 OurParentPartIndex,
-		TSet<uint32>& CopiedParts);
+		FIndicesSet& CopiedParts);
 	
 	UStaticMeshComponent* CopyMeshComponent(const UStaticMeshComponent* Prototype, UPrimitiveComponent* ParentComponent);
 
@@ -132,10 +155,7 @@ private:
 	UPROPERTY(Transient)
 	TArray<FUHAttachmentPart> Parts;
 
-	FSocketHandle CurrentOurSocketHandle;
-	FSocketHandle CurrentTheirSocketHandle;
-	
-	float CurrentDistance;
+	FAttachmentOption CurrentAttachmentOption;
 
 	FRotator TheirTargetRotation;
 	FRotator OurTargetRotation;

@@ -30,6 +30,8 @@ namespace AttachableCVars
 }
 
 
+// FSocketHandle
+
 bool UUHAttachable::FSocketHandle::IsSet() const
 {
 	return static_cast<bool>(Attachable);
@@ -66,13 +68,56 @@ void UUHAttachable::FSocketHandle::Reset()
 }
 
 
+// FAttachmentOption
+
+UUHAttachable::FAttachmentOption::FAttachmentOption(
+	const FSocketHandle& InOurSocket,
+	const FSocketHandle& InTheirSocket)
+		: OurSocket(InOurSocket)
+		, TheirSocket(InTheirSocket)
+{
+	UpdateDistance();
+}
+
+bool UUHAttachable::FAttachmentOption::IsSet() const
+{
+	return OurSocket.IsSet() && TheirSocket.IsSet();
+}
+
+void UUHAttachable::FAttachmentOption::Reset()
+{
+	OurSocket.Reset();
+	TheirSocket.Reset();
+	UpdateDistance();
+}
+
+void UUHAttachable::FAttachmentOption::UpdateDistance()
+{
+	Distance = IsSet()
+		? FVector::Distance(OurSocket.GetWorldLocation(), TheirSocket.GetWorldLocation())
+		: std::numeric_limits<float>::max();
+}
+
+UPrimitiveComponent* UUHAttachable::FAttachmentOption::GetOurPrimitive() const
+{
+	return OurSocket.GetPrimitive();
+}
+
+UPrimitiveComponent* UUHAttachable::FAttachmentOption::GetTheirPrimitive() const
+{
+	return TheirSocket.GetPrimitive();
+}
+
+
+// UUHAttachable
+
 UUHAttachable::UUHAttachable()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.TickGroup = TG_PostPhysics;
 }
 
-bool UUHAttachable::IsAttachInProgress() const
+bool UUHAttachable::IsAttachingInProgress() const
 {
 	return State == EUHAttachableState::Attaching;
 }
@@ -83,9 +128,7 @@ void UUHAttachable::StartAttaching(float InMaxAttachDistance)
 	{
 		State = EUHAttachableState::Attaching;
 		MaxAttachDistance = InMaxAttachDistance;
-		CurrentOurSocketHandle.Reset();
-		CurrentTheirSocketHandle.Reset();
-		CurrentDistance = std::numeric_limits<float>::max();
+		CurrentAttachmentOption.Reset();
 	}
 }
 
@@ -95,29 +138,27 @@ void UUHAttachable::StopAttaching()
 	State = EUHAttachableState::Idle;
 }
 
-bool UUHAttachable::IsStickInProgress() const
+bool UUHAttachable::IsStickingInProgress() const
 {
 	return State == EUHAttachableState::Sticking;
 }
 
 bool UUHAttachable::StartSticking()
 {
-	if (IsAttachInProgress() && CurrentTheirSocketHandle.IsSet() && CurrentDistance < MaxAttachDistance && MovementComponent)
+	if (IsAttachingInProgress() && CurrentAttachmentOption.IsSet() && CurrentAttachmentOption.Distance < MaxAttachDistance && MovementComponent)
 	{
-		ensure(CurrentOurSocketHandle.IsSet());
-
-		auto* OurBlock = Cast<AUHBaseBlock>(CurrentOurSocketHandle.GetPrimitive()->GetOwner());
+		auto* OurBlock = Cast<AUHBaseBlock>(CurrentAttachmentOption.GetOurPrimitive()->GetOwner());
 		if (!ensure(OurBlock))
 		{
 			return false;
 		}
 
 		OurBlock->SetManipulated(false);
-		OurBlock->Reroot(CurrentOurSocketHandle.GetPrimitive());
+		OurBlock->Reroot(CurrentAttachmentOption.GetOurPrimitive());
 
 		State = EUHAttachableState::Sticking;
-		OurTargetRotation = SnappedRelativeRotation(CurrentOurSocketHandle.GetPrimitive(), CurrentTheirSocketHandle.GetPrimitive());
-		TheirTargetRotation = SnappedRelativeRotation(CurrentTheirSocketHandle.GetPrimitive(), CurrentOurSocketHandle.GetPrimitive());
+		OurTargetRotation = SnappedRelativeRotation(CurrentAttachmentOption.GetOurPrimitive(), CurrentAttachmentOption.GetTheirPrimitive());
+		TheirTargetRotation = SnappedRelativeRotation(CurrentAttachmentOption.GetTheirPrimitive(), CurrentAttachmentOption.GetOurPrimitive());
 		RemainingDistance = -1.f;
 		RemainingAngle = -1.f;
 		
@@ -133,7 +174,7 @@ void UUHAttachable::Detach(USceneComponent* PartToDetach)
 	{
 		return;
 	}
-	
+
 	const FUHAttachmentPart* Part = Parts.FindByPredicate([PartToDetach](const FUHAttachmentPart& P)
 	{
 		return P.PrimitiveComponent == PartToDetach;
@@ -144,6 +185,7 @@ void UUHAttachable::Detach(USceneComponent* PartToDetach)
 		return;
 	}
 
+	FIndicesSet VisitedIndices;
 	for (const uint32 Index : Part->ConnectedPartIndices)
 	{
 		const FUHAttachmentPart& AttachedPart = Parts[Index];
@@ -157,7 +199,7 @@ void UUHAttachable::Detach(USceneComponent* PartToDetach)
 		Actor->MeshComponent->SetStaticMesh(DetachedMesh->GetStaticMesh());
 		Actor->MeshComponent->SetMaterial(0, DetachedMesh->GetMaterial(0));
 
-		TSet<uint32> VisitedIndices;
+		VisitedIndices.Reset();
 		VisitedIndices.Add(Part - Parts.GetData());
 
 		ensure(Actor->AttachableComponent->Parts.Num() == 1);
@@ -179,17 +221,15 @@ void UUHAttachable::Detach(USceneComponent* PartToDetach)
 	Parts[0].ConnectedPartIndices.Reset();
 	
 	MovementComponent->UpdatedComponentShapeMightChange();
-	
-	CurrentOurSocketHandle.Reset();
-	CurrentTheirSocketHandle.Reset();
-	CurrentDistance = std::numeric_limits<float>::max();
+
+	CurrentAttachmentOption.Reset();
 }
 
 void UUHAttachable::CopyPartsFrom(
 	const UUHAttachable* Other,
 	uint32 OtherParentPartIndex,
 	uint32 OurParentPartIndex,
-	TSet<uint32>& CopiedParts)
+	FIndicesSet& CopiedParts)
 {
 	const FUHAttachmentPart& OurParentPart = Parts[OurParentPartIndex];
 	const FUHAttachmentPart& OtherParentPart = Other->Parts[OtherParentPartIndex];
@@ -253,32 +293,30 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		}
 	}
 
-	if (IsAttachInProgress())
+	if (IsAttachingInProgress())
 	{
-		UpdateCurrentTarget();
+		DeclineCurrentAttachmentOptionIfTooFar();
+		UpdateCurrentAttachmentOption();
 		
 		if (AttachableCVars::DebugDrawAttachment.GetValueOnGameThread())
 		{
-			if (CurrentTheirSocketHandle.IsSet())
+			if (CurrentAttachmentOption.IsSet())
 			{
-				ensure(CurrentOurSocketHandle.IsSet());
-				
 				DrawDebugLine(
 					GetWorld(),
-					CurrentOurSocketHandle.GetWorldLocation(),
-					CurrentTheirSocketHandle.GetWorldLocation(),
+					CurrentAttachmentOption.OurSocket.GetWorldLocation(),
+					CurrentAttachmentOption.TheirSocket.GetWorldLocation(),
 					FColor::Cyan);
 			}
 		}
 	}
 
-	if (IsStickInProgress())
+	if (IsStickingInProgress())
 	{
-		ensure(CurrentOurSocketHandle.IsSet());
-		ensure(CurrentTheirSocketHandle.IsSet());
+		ensure(CurrentAttachmentOption.IsSet());
 		
-		const FVector OurSocketLocation = CurrentOurSocketHandle.GetWorldLocation();
-		const FVector TheirSocketLocation = CurrentTheirSocketHandle.GetWorldLocation();
+		const FVector OurSocketLocation = CurrentAttachmentOption.OurSocket.GetWorldLocation();
+		const FVector TheirSocketLocation = CurrentAttachmentOption.TheirSocket.GetWorldLocation();
 
 		if (AttachableCVars::DebugDrawAttachment.GetValueOnGameThread())
 		{
@@ -289,24 +327,24 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 				FColor::Red);
 		}
 
-		const FQuat OurCurrentRotation = CurrentOurSocketHandle.GetPrimitive()->GetComponentRotation().Quaternion();
+		const FQuat OurCurrentRotation = CurrentAttachmentOption.GetOurPrimitive()->GetComponentRotation().Quaternion();
 		FQuat OurDeltaQuat = (OurTargetRotationInWorldSpace().Quaternion() * OurCurrentRotation.Inverse());
 		OurDeltaQuat.EnforceShortestArcWith(FQuat::MakeFromRotationVector(MovementComponent->AngularVelocity));
 		const FVector OurDelta = OurDeltaQuat.ToRotationVector();
 		const FVector OurVelocity = OurDelta.GetSafeNormal() * (FMath::Sqrt(FMath::Clamp(OurDelta.Size() / 10.f, 0.f, 1.f)) * 0.7f + 0.3f) * RotationSpeed;
 		MovementComponent->AngularVelocity = OurVelocity;
 		
-		const FQuat TheirCurrentRotation = CurrentTheirSocketHandle.GetPrimitive()->GetComponentRotation().Quaternion();
+		const FQuat TheirCurrentRotation = CurrentAttachmentOption.GetTheirPrimitive()->GetComponentRotation().Quaternion();
 		FQuat TheirDeltaQuat = (TheirTargetRotationInWorldSpace().Quaternion() * TheirCurrentRotation.Inverse());
-		TheirDeltaQuat.EnforceShortestArcWith(FQuat::MakeFromRotationVector(CurrentTheirSocketHandle.Attachable->MovementComponent->AngularVelocity));
+		TheirDeltaQuat.EnforceShortestArcWith(FQuat::MakeFromRotationVector(CurrentAttachmentOption.TheirSocket.Attachable->MovementComponent->AngularVelocity));
 		const FVector TheirDelta = TheirDeltaQuat.ToRotationVector();
 		const FVector TheirVelocity = TheirDelta.GetSafeNormal() * (FMath::Sqrt(FMath::Clamp(TheirDelta.Size() / 100.f, 0.f, 1.f)) * 0.5f + 0.5f) * RotationSpeed;
-		CurrentTheirSocketHandle.Attachable->MovementComponent->AngularVelocity = TheirVelocity;
+		CurrentAttachmentOption.TheirSocket.Attachable->MovementComponent->AngularVelocity = TheirVelocity;
 
 		const FVector Delta = TheirSocketLocation - OurSocketLocation;
 		const FVector Velocity = Delta.GetSafeNormal() * (FMath::Sqrt(FMath::Clamp(Delta.Size() / 100.f, 0.f, 1.f)) * 0.5f + 0.5f) * MovementSpeed;
 		MovementComponent->Velocity = Velocity;
-		CurrentTheirSocketHandle.Attachable->MovementComponent->Velocity = -Velocity;
+		CurrentAttachmentOption.TheirSocket.Attachable->MovementComponent->Velocity = -Velocity;
 
 		const float NewRemainingDistance = FVector::Distance(TheirSocketLocation, OurSocketLocation);
 		const float NewRemainingAngle = OurDelta.Size();
@@ -315,7 +353,7 @@ void UUHAttachable::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		{
 			UE_LOG(LogUHAttachable, Display, TEXT("Sticking complete"));
 
-			Attach(CurrentTheirSocketHandle.Attachable);
+			Attach(CurrentAttachmentOption.TheirSocket.Attachable);
 			StopAttaching();
 		}
 		else if ((RemainingDistance > 0.f && FMath::Abs(NewRemainingDistance - RemainingDistance) < UE_KINDA_SMALL_NUMBER) &&
@@ -341,15 +379,71 @@ FRotator UUHAttachable::SnappedRelativeRotation(USceneComponent* Component, USce
 
 FRotator UUHAttachable::OurTargetRotationInWorldSpace() const
 {
-	return CurrentTheirSocketHandle.GetPrimitive()->GetComponentTransform().TransformRotation(OurTargetRotation.Quaternion()).Rotator();
+	return CurrentAttachmentOption.GetTheirPrimitive()->GetComponentTransform().TransformRotation(OurTargetRotation.Quaternion()).Rotator();
 }
 
 FRotator UUHAttachable::TheirTargetRotationInWorldSpace() const
 {
-	return CurrentOurSocketHandle.GetPrimitive()->GetComponentTransform().TransformRotation(TheirTargetRotation.Quaternion()).Rotator();
+	return CurrentAttachmentOption.GetOurPrimitive()->GetComponentTransform().TransformRotation(TheirTargetRotation.Quaternion()).Rotator();
 }
 
-void UUHAttachable::UpdateCurrentTarget()
+void UUHAttachable::DeclineCurrentAttachmentOptionIfTooFar()
+{
+	if (CurrentAttachmentOption.IsSet())
+	{
+		CurrentAttachmentOption.UpdateDistance();
+		
+		if (CurrentAttachmentOption.Distance > MaxAttachDistance)
+		{
+			CurrentAttachmentOption.Reset();
+		}
+	}
+}
+
+void UUHAttachable::UpdateCurrentAttachmentOption()
+{
+	TArray<FAttachmentOption> Options = FindAllAttachmentOptions();
+	
+	Algo::SortBy(Options, [](const FAttachmentOption& Option) { return Option.Distance; });
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.bFindInitialOverlaps = false;
+
+	for (const FAttachmentOption& Option : Options)
+	{
+		if (Option.Distance > MaxAttachDistance)
+		{
+			break;
+		}
+
+		if (Option.Distance >= CurrentAttachmentOption.Distance - TargetSwitchDistanceThreshold)
+		{
+			break;
+		}
+		
+		const FVector OurSocketLocation = Option.OurSocket.GetWorldLocation();
+		const FVector To = Option.TheirSocket.GetWorldLocation();
+		const FVector From = OurSocketLocation + (To - OurSocketLocation).GetClampedToMaxSize(0.1f);
+
+		FHitResult Hit;
+		GetWorld()->LineTraceSingleByChannel(Hit, From, To, ECC_Visibility, QueryParams);
+
+		const bool bTraceSuccessful = !Hit.bBlockingHit || Hit.Time > 0.99f;
+
+		if (AttachableCVars::DebugDrawAttachmentTraces.GetValueOnGameThread())
+		{
+			DrawDebugLine(GetWorld(), Hit.TraceStart, Hit.bBlockingHit ? Hit.Location : Hit.TraceEnd, bTraceSuccessful ? FColor::Green : FColor::Red);
+		}
+		
+		if (bTraceSuccessful)
+		{
+			CurrentAttachmentOption = Option;
+			break;
+		}
+	}
+}
+
+TArray<UUHAttachable::FAttachmentOption> UUHAttachable::FindAllAttachmentOptions()
 {
 	FCollisionQueryParams QueryParams;
 	QueryParams.bTraceComplex = false;
@@ -375,109 +469,44 @@ void UUHAttachable::UpdateCurrentTarget()
 			ECC_Visibility,
 			InflatedShape,
 			QueryParams);
+		
 		Overlaps.Append(OverlapsLocal);
 	}
 
-	struct FAttachmentOption
-	{
-		FSocketHandle OurSocket;
-		FSocketHandle TheirSocket;
-		float Distance;
-	};
-
 	TArray<FAttachmentOption> Options;
-
-	if (CurrentOurSocketHandle.IsSet() && CurrentTheirSocketHandle.IsSet())
-	{
-		CurrentDistance = FVector::Distance(CurrentOurSocketHandle.GetWorldLocation(), CurrentTheirSocketHandle.GetWorldLocation());
-		if (CurrentDistance > MaxAttachDistance)
-		{
-			CurrentOurSocketHandle.Reset();
-			CurrentTheirSocketHandle.Reset();
-			CurrentDistance = std::numeric_limits<float>::max();
-		}
-	}
-
 	for (const FOverlapResult& Overlap : Overlaps)
 	{
 		if (auto* const OtherAttachable = Overlap.GetActor()->FindComponentByClass<UUHAttachable>())
 		{
-			for (int32 TPI = 0; TPI < OtherAttachable->Parts.Num(); ++TPI)
+			for (int32 TheirPart = 0; TheirPart < OtherAttachable->Parts.Num(); ++TheirPart)
 			{
-				const FUHAttachmentPart& TheirPart = OtherAttachable->Parts[TPI];
-				for (int32 TSI = 0; TSI < OtherAttachable->Parts[TPI].Sockets.Num(); ++TSI)
+				for (int32 TheirSocket = 0; TheirSocket < OtherAttachable->Parts[TheirPart].Sockets.Num(); ++TheirSocket)
 				{
-					const FUHAttachmentSocket& TheirSocket = TheirPart.Sockets[TSI];
-					const FVector TheirSocketLocation = TheirPart.PrimitiveComponent->GetComponentTransform().TransformPosition(TheirSocket.Location);
-
-					for (int32 OPI = 0; OPI < Parts.Num(); ++OPI)
+					for (int32 OurPart = 0; OurPart < Parts.Num(); ++OurPart)
 					{
-						const FUHAttachmentPart& OurPart = Parts[OPI];
-						for (int32 OSI = 0; OSI < Parts[OPI].Sockets.Num(); ++OSI)
+						for (int32 OurSocket = 0; OurSocket < Parts[OurPart].Sockets.Num(); ++OurSocket)
 						{
-							const FUHAttachmentSocket& OurSocket = OurPart.Sockets[OSI];
-							const FVector OurSocketLocation = OurPart.PrimitiveComponent->GetComponentTransform().TransformPosition(OurSocket.Location);
-							const float Distance = FVector::Distance(TheirSocketLocation, OurSocketLocation);
-
-							Options.Emplace(FSocketHandle{this, OPI, OSI}, FSocketHandle{OtherAttachable, TPI, TSI}, Distance);
+							Options.Emplace(
+								FSocketHandle{this, OurPart, OurSocket},
+								FSocketHandle{OtherAttachable, TheirPart, TheirSocket});
 						}
 					}
 				}
 			}
 		}
 	}
-	
-	Algo::SortBy(Options, [](const FAttachmentOption& Option) { return Option.Distance; });
 
-	FCollisionQueryParams QueryParams2;
-	QueryParams2.bFindInitialOverlaps = false;
-
-	for (const FAttachmentOption& Option : Options)
-	{
-		if (Option.Distance > MaxAttachDistance)
-		{
-			break;
-		}
-
-		if (Option.Distance >= CurrentDistance - TargetSwitchDistanceThreshold)
-		{
-			break;
-		}
-		
-		const FVector OurSocketLocation = Option.OurSocket.GetWorldLocation();
-		const FVector To = Option.TheirSocket.GetWorldLocation();
-		const FVector From = OurSocketLocation + (To - OurSocketLocation).GetClampedToMaxSize(0.1f);
-
-		FHitResult Hit;
-		GetWorld()->LineTraceSingleByChannel(Hit, From, To, ECC_Visibility, QueryParams2);
-
-		const bool bTraceSuccessful = !Hit.bBlockingHit || Hit.Time > 0.99f;
-
-		if (AttachableCVars::DebugDrawAttachmentTraces.GetValueOnGameThread())
-		{
-			DrawDebugLine(GetWorld(), Hit.TraceStart, Hit.bBlockingHit ? Hit.Location : Hit.TraceEnd, bTraceSuccessful ? FColor::Green : FColor::Red);
-		}
-		
-		if (bTraceSuccessful)
-		{
-			CurrentDistance = Option.Distance;
-			CurrentOurSocketHandle = Option.OurSocket;
-			CurrentTheirSocketHandle = Option.TheirSocket;
-			break;
-		}
-	}
+	return MoveTemp(Options);
 }
 
 void UUHAttachable::StopSticking()
 {
-	if (IsStickInProgress())
+	if (IsStickingInProgress())
 	{
 		MovementComponent->StopMovementImmediately();
-		CurrentTheirSocketHandle.Attachable->MovementComponent->StopMovementImmediately();
+		CurrentAttachmentOption.TheirSocket.Attachable->MovementComponent->StopMovementImmediately();
 
-		CurrentOurSocketHandle.Reset();
-		CurrentTheirSocketHandle.Reset();
-		CurrentDistance = 0.f;
+		CurrentAttachmentOption.Reset();
 		TheirTargetRotation = FRotator::ZeroRotator;
 		OurTargetRotation = FRotator::ZeroRotator;
 		
@@ -487,19 +516,19 @@ void UUHAttachable::StopSticking()
 
 void UUHAttachable::Attach(UUHAttachable* Other)
 {
-	if (!ensure(CurrentOurSocketHandle.IsSet()))
+	if (!ensure(CurrentAttachmentOption.IsSet()))
 	{
 		return;
 	}
 	
-	if (!ensure(CurrentOurSocketHandle.GetPrimitive() == GetOwner()->GetRootComponent()))
+	if (!ensure(CurrentAttachmentOption.GetOurPrimitive() == GetOwner()->GetRootComponent()))
 	{
 		return;
 	}
 
 	const FUHAttachmentPart* OtherStartPart = Other->Parts.FindByPredicate([this](const FUHAttachmentPart& P)
 	{
-		return P.PrimitiveComponent == CurrentTheirSocketHandle.GetPrimitive();
+		return P.PrimitiveComponent == CurrentAttachmentOption.GetTheirPrimitive();
 	});
 
 	if (!ensure(OtherStartPart))
@@ -508,7 +537,7 @@ void UUHAttachable::Attach(UUHAttachable* Other)
 	}
 
 	TSet<const FUHAttachmentPart*> AttachedParts;
-	Attach(Other, OtherStartPart, AttachedParts, CurrentOurSocketHandle.PartIndex);
+	Attach(Other, OtherStartPart, AttachedParts, CurrentAttachmentOption.OurSocket.PartIndex);
 
 	MovementComponent->UpdatedComponentShapeMightChange();
 	
